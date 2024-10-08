@@ -1,10 +1,26 @@
 import { getPublicClient } from "@wagmi/core";
 import { config } from "@/app/utils/config";
-import { holesky } from "@wagmi/core/chains";
+
+const bittorrentchainTestnet = {
+  id: 1029,
+  name: "BitTorrent Chain Donau",
+  nativeCurrency: {
+    decimals: 18,
+    name: "BitTorrent Chain Donau",
+    symbol: "BTT",
+  },
+  rpcUrls: {
+    default: { http: ["https://pre-rpc.bittorrentchain.io/"] },
+  },
+  blockExplorers: {
+    default: { name: "bttc scan", url: "https://testscan.bittorrentchain.io/" },
+  },
+  testnet: true,
+};
 
 export const initializeClient = () => {
   const client = getPublicClient(config, {
-    chainId: holesky.id,
+    chainId: bittorrentchainTestnet.id,
   });
   return client;
 };

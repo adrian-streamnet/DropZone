@@ -1,5 +1,5 @@
 import React from "react";
-import UploadJson from "@/app/components/UploadJson";
+import UploadJson from "@/components/UploadJson";
 
 function page() {
   return (

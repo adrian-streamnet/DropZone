@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Blockies from "react-blockies"; // Import Blockies component
+import { CONTRACT_ADDRESS } from "@/app/constants";
+import contractABI from "@/app/DropZoneFactory.json";
+import { initializeClient } from "@/app/utils/publicClient";
+import { useAccount, useWriteContract } from "wagmi";
+
+const client = initializeClient();
 
 interface JsonData {
   [address: string]: number;
@@ -13,6 +19,9 @@ const UploadJson: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merkleRoot, setMerkleRoot] = useState<string | null>(null);
+  const [tokenAddress, setTokenAddress] = useState<string>(""); // State for token address
+  const { writeContractAsync } = useWriteContract();
+  const { address, isConnected } = useAccount();
 
   // Handle dropped files
   const onDrop = (acceptedFiles: File[]) => {
@@ -45,6 +54,26 @@ const UploadJson: React.FC = () => {
     }
   };
 
+  const submitinContract = async (merkleRoot: string) => {
+    try {
+      console.log("Submitting to contract...");
+      const tx = await writeContractAsync({
+        address: CONTRACT_ADDRESS,
+        account: address,
+        abi: contractABI,
+        functionName: "createDropZone",
+        args: [tokenAddress, merkleRoot, "test"], // Pass the token address and merkle root to the contract
+      });
+      console.log(tx);
+      const receipt = await client.waitForTransactionReceipt({ hash: tx });
+      console.log(receipt);
+      alert("Successfully submitted to contract!");
+    } catch (error) {
+      console.error("Error submitting to contract:", error);
+      setError("Failed to submit to contract");
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -54,7 +83,7 @@ const UploadJson: React.FC = () => {
   });
 
   const handleSubmit = async () => {
-    if (jsonData) {
+    if (jsonData && tokenAddress) {
       setIsLoading(true);
       setError(null);
 
@@ -75,8 +104,12 @@ const UploadJson: React.FC = () => {
         console.log("Merkle Root:", data.merkleRoot[0]);
 
         // Assuming merkleRoot is returned as an array, extract the first element
-        setMerkleRoot(data.merkleRoot[0]); // Set the root to display
+        const merkleRootValue = data.merkleRoot[0]; // Set the root to display
+        setMerkleRoot(merkleRootValue);
         alert("Merkle tree created successfully!");
+
+        // Call the contract submission function after successfully creating the Merkle tree
+        await submitinContract(merkleRootValue);
       } catch (error) {
         console.error("Error submitting data:", error);
         setError("Failed to create Merkle tree");
@@ -84,7 +117,7 @@ const UploadJson: React.FC = () => {
         setIsLoading(false);
       }
     } else {
-      alert("No data to submit!");
+      alert("No data to submit or token address is missing!");
     }
   };
 
@@ -183,6 +216,20 @@ const UploadJson: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Input for Token Address */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Token Address
+          </label>
+          <input
+            type="text"
+            value={tokenAddress}
+            onChange={(e) => setTokenAddress(e.target.value)}
+            className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
+            placeholder="Enter token address"
+          />
+        </div>
 
         <button
           onClick={handleSubmit}
