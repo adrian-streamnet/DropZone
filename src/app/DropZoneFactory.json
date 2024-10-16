@@ -7,14 +7,9 @@
         "type": "address"
       },
       {
-        "internalType": "bytes32",
-        "name": "merkleRoot",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "string",
-        "name": "ipfsHash",
-        "type": "string"
+        "internalType": "address",
+        "name": "initOwner",
+        "type": "address"
       }
     ],
     "name": "createDropZone",

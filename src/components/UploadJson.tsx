@@ -7,6 +7,7 @@ import { CONTRACT_ADDRESS } from "@/app/constants";
 import contractABI from "@/app/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
+import DropZone from "@/Dropzone.json";
 
 const client = initializeClient();
 
@@ -20,6 +21,7 @@ const UploadJson: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merkleRoot, setMerkleRoot] = useState<string | null>(null);
   const [tokenAddress, setTokenAddress] = useState<string>(""); // State for token address
+  // const [DeployedAddress, setDeployedAddress] = useState<string | null>(null);
   const { writeContractAsync } = useWriteContract();
   const { address, isConnected } = useAccount();
 
@@ -54,7 +56,11 @@ const UploadJson: React.FC = () => {
     }
   };
 
-  const submitinContract = async (merkleRoot: string) => {
+  const submitinContract = async (tokenAddress: string, merkleRoot: string) => {
+    if (!client) {
+      setError("Client is not initialized");
+      return;
+    }
     try {
       console.log("Submitting to contract...");
       const tx = await writeContractAsync({
@@ -62,12 +68,26 @@ const UploadJson: React.FC = () => {
         account: address,
         abi: contractABI,
         functionName: "createDropZone",
-        args: [tokenAddress, merkleRoot, "test"], // Pass the token address and merkle root to the contract
+        args: [tokenAddress, address],
       });
-      console.log(tx);
+      console.log("Transaction hash:", tx);
+
       const receipt = await client.waitForTransactionReceipt({ hash: tx });
-      console.log(receipt);
-      alert("Successfully submitted to contract!");
+      console.log("Transaction receipt:", receipt);
+
+      const DeployedAddress = await receipt.logs[0].address;
+      console.log("Deployedddd address", DeployedAddress);
+
+      console.log("updeting root.....");
+
+      const updateRoot = await writeContractAsync({
+        address: DeployedAddress,
+        account: address,
+        abi: DropZone,
+        functionName: "updateMerkleRoot",
+        args: [merkleRoot, "testHash"],
+      });
+      console.log("hash", updateRoot);
     } catch (error) {
       console.error("Error submitting to contract:", error);
       setError("Failed to submit to contract");
@@ -109,7 +129,7 @@ const UploadJson: React.FC = () => {
         alert("Merkle tree created successfully!");
 
         // Call the contract submission function after successfully creating the Merkle tree
-        await submitinContract(merkleRootValue);
+        await submitinContract(tokenAddress, merkleRootValue);
       } catch (error) {
         console.error("Error submitting data:", error);
         setError("Failed to create Merkle tree");

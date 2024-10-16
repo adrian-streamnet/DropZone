@@ -9,8 +9,8 @@ import { Providers } from "../app/Providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lottery🤑",
-  description: "lottery game for task purpose",
+  title: "DropZone🤑",
+  description: "Airdrop On The Way",
 };
 
 export default function RootLayout({
