@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Blockies from "react-blockies";
 import { CONTRACT_ADDRESS } from "@/app/constants";
-import contractABI from "@/app/DropZoneFactory.json";
+import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
 

@@ -8,6 +8,8 @@ import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
 import DropZone from "@/artifacts/DropZone.json";
+import { ethers } from "ethers"; // Import ethers for salt generation
+import { toHex } from "viem";
 
 const client = initializeClient();
 
@@ -21,7 +23,7 @@ const UploadJson: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merkleRoot, setMerkleRoot] = useState<string | null>(null);
   const [tokenAddress, setTokenAddress] = useState<string>(""); // State for token address
-  // const [DeployedAddress, setDeployedAddress] = useState<string | null>(null);
+  const [salt, setSalt] = useState<string | null>(null); // State for salt
   const { writeContractAsync } = useWriteContract();
   const { address, isConnected } = useAccount();
 
@@ -61,41 +63,93 @@ const UploadJson: React.FC = () => {
     }
   };
 
-  const submitinContract = async (tokenAddress: string, merkleRoot: string) => {
+  const submitInContract = async (tokenAddress: string, merkleRoot: string) => {
     if (!client) {
       setError("Client is not initialized");
       return;
     }
+    if (!isConnected || !address) {
+      setError("Wallet is not connected");
+      return;
+    }
+
     try {
+      console.log("Generating salt...");
+      // Generate a random bytes32 salt using ethers.js
+      const generatedSalt = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+      setSalt(generatedSalt);
+      console.log("Generated Salt:", generatedSalt);
+
       console.log("Submitting to contract...");
+
+      // Deploy the DropZone contract with the required parameters
       const tx = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         account: address,
-        abi: contractABI.abi,
-        functionName: "createDropZone",
-        args: [tokenAddress, address],
+        abi: contractABI,
+        functionName: "deployDropZone",
+        args: [
+          tokenAddress,
+          address,
+          toHex(merkleRoot, { size: 32 }),
+          "testHash", // Replace with actual merkleDataUri if needed
+          generatedSalt,
+        ],
       });
+
       console.log("Transaction hash:", tx);
 
+      // Wait for the transaction to be mined
       const receipt = await client.waitForTransactionReceipt({ hash: tx });
       console.log("Transaction receipt:", receipt);
 
-      const DeployedAddress = await receipt.logs[0].address;
-      console.log("Deployedddd address", DeployedAddress);
+      // Extract the deployed DropZone address from the event logs
+      // Assuming the DropDeployed event is emitted with the newDrop address as the second parameter
+      const event = receipt.logs.find(
+        (log: any) =>
+          log.address.toLowerCase() === CONTRACT_ADDRESS.toLowerCase() &&
+          log.topics[0] ===
+            ethers.utils.id("DropDeployed(address,address,bytes32)") // Ensure the event signature matches
+      );
 
-      console.log("updeting root.....");
+      if (!event) {
+        throw new Error("DropDeployed event not found in logs");
+      }
 
-      const updateRoot = await writeContractAsync({
+      // Decode the event to get the newDrop address
+      const iface = new ethers.utils.Interface(contractABI);
+      const decodedEvent = iface.parseLog(event);
+      const DeployedAddress = decodedEvent.args.newDrop; // Adjust based on event definition
+      console.log("Deployed address:", DeployedAddress);
+
+      // Optionally, you can store or display the DeployedAddress and Salt
+      // For example:
+      // setDeployedAddress(DeployedAddress);
+      // setSalt(generatedSalt);
+
+      console.log("Updating Merkle Root...");
+
+      const updateRootTx = await writeContractAsync({
         address: DeployedAddress,
         account: address,
-        abi: DropZone.abi,
+        abi: DropZone,
         functionName: "updateMerkleRoot",
-        args: [merkleRoot, "testHash"],
+        args: [merkleRoot, "testHash"], // Replace "testHash" with actual data if needed
       });
-      console.log("hash", updateRoot);
-    } catch (error) {
+      console.log("Update Merkle Root Transaction hash:", updateRootTx);
+
+      // Wait for the update transaction to be mined
+      const updateReceipt = await client.waitForTransactionReceipt({
+        hash: updateRootTx,
+      });
+      console.log("Update Merkle Root Transaction receipt:", updateReceipt);
+
+      alert("DropZone deployed and Merkle Root updated successfully!");
+    } catch (error: any) {
       console.error("Error submitting to contract:", error);
-      setError("Failed to submit to contract");
+      setError(
+        error?.message || "Failed to submit to contract. Please try again."
+      );
     }
   };
 
@@ -118,7 +172,7 @@ const UploadJson: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(jsonData), // Send the first object in the array
+          body: JSON.stringify(jsonData), // Send the JSON data
         });
 
         if (!response.ok) {
@@ -126,18 +180,20 @@ const UploadJson: React.FC = () => {
         }
 
         const data = await response.json();
-        console.log("Merkle Root:", data.merkleRoot[0]);
+        console.log("Merkle Root:", data.merkleRoot);
 
-        // Assuming merkleRoot is returned as an array, extract the first element
-        const merkleRootValue = data.merkleRoot; // Set the root to display
+        // Assuming merkleRoot is returned as a string
+        const merkleRootValue = data.merkleRoot;
         setMerkleRoot(merkleRootValue);
         alert("Merkle tree created successfully!");
 
         // Call the contract submission function after successfully creating the Merkle tree
-        await submitinContract(tokenAddress, merkleRootValue);
-      } catch (error) {
+        await submitInContract(tokenAddress, merkleRootValue);
+      } catch (error: any) {
         console.error("Error submitting data:", error);
-        setError("Failed to create Merkle tree");
+        setError(
+          error?.message || "Failed to create Merkle tree. Please try again."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -259,9 +315,12 @@ const UploadJson: React.FC = () => {
           {isLoading ? "Submitting..." : "Submit"}
         </button>
 
-        {/* Display Merkle Root if available */}
+        {/* Display Merkle Root and Salt if available */}
         {merkleRoot && (
-          <div className="mt-4 text-green-500">Merkle Root: {merkleRoot}</div>
+          <div className="mt-4 text-green-500">
+            <p>Merkle Root: {merkleRoot}</p>
+            {salt && <p>Salt: {salt}</p>}
+          </div>
         )}
       </div>
     </div>

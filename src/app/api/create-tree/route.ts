@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const airdropData = await request.json();
-
+    console.log(airdropData);
     if (!airdropData || typeof airdropData !== "object") {
       return NextResponse.json(
         { error: "Invalid airdrop data" },
@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Validate and convert cap to bigint
-      if (!isValidBigInt(cap)) {
-        throw new Error(`Invalid cap value: ${cap}`);
-      }
+      // if (!isValidBigInt(cap)) {
+      //   throw new Error(`Invalid cap value: ${cap}`);
+      // }
 
       const capBigInt = BigInt(cap); // Cast to bigint
       const packed = encodePacked(
