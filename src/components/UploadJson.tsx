@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Blockies from "react-blockies"; // Import Blockies component
 import { CONTRACT_ADDRESS } from "@/app/constants";
-import contractABI from "@/app/DropZoneFactory.json";
+import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
-import DropZone from "@/Dropzone.json";
+import DropZone from "@/artifacts/DropZone.json";
 
 const client = initializeClient();
 
@@ -71,7 +71,7 @@ const UploadJson: React.FC = () => {
       const tx = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         account: address,
-        abi: contractABI,
+        abi: contractABI.abi,
         functionName: "createDropZone",
         args: [tokenAddress, address],
       });
@@ -88,7 +88,7 @@ const UploadJson: React.FC = () => {
       const updateRoot = await writeContractAsync({
         address: DeployedAddress,
         account: address,
-        abi: DropZone,
+        abi: DropZone.abi,
         functionName: "updateMerkleRoot",
         args: [merkleRoot, "testHash"],
       });
