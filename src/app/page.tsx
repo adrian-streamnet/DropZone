@@ -1,18 +1,17 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 import { useEffect, useState } from "react";
-import contractABI from "@/Lottery.json";
+// import contractABI from "@/Lottery.json";
 import { useAccount, useWriteContract } from "wagmi";
 import { getContract } from "viem";
 import md5 from "crypto-js/md5";
 import { CONTRACT_ADDRESS } from "@/app/constants";
 import { initializeClient } from "@/app/utils/publicClient";
 
-const client = initializeClient();
-
 export default function Home() {
   const { writeContractAsync } = useWriteContract();
   const { address, isConnected } = useAccount();
+  const [client, setClient] = useState<any>(null);
   const [participants, setParticipants] = useState([]);
   const [isParticipating, setIsParticipating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +52,7 @@ export default function Home() {
 
   useEffect(() => {
     const getDetails = async () => {
+      setClient(await initializeClient());
       try {
         const contract = getContract({
           address: CONTRACT_ADDRESS,

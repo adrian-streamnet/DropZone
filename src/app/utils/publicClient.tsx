@@ -18,7 +18,7 @@ const bittorrentchainTestnet = {
   testnet: true,
 };
 
-export const initializeClient = () => {
+export const initializeClient = async () => {
   const client = getPublicClient(config, {
     chainId: bittorrentchainTestnet.id,
   });
