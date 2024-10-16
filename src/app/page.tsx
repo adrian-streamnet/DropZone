@@ -32,7 +32,7 @@ function Page() {
       console.log(tx);
 
       // Wait for the transaction receipt
-      const receipt = await client.waitForTransactionReceipt({ hash: tx });
+      // const receipt = await client.waitForTransactionReceipt({ hash: tx });
 
       // Update claimed state on successful transaction
       setClaimed(true);

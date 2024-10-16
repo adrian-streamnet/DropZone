@@ -12,11 +12,11 @@ import DropZone from "@/Dropzone.json";
 const client = initializeClient();
 
 interface JsonData {
-  [address: string]: number;
+  [address: string]: string;
 }
 
 const UploadJson: React.FC = () => {
-  const [jsonData, setJsonData] = useState<JsonData[] | null>(null);
+  const [jsonData, setJsonData] = useState<JsonData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merkleRoot, setMerkleRoot] = useState<string | null>(null);
@@ -35,15 +35,20 @@ const UploadJson: React.FC = () => {
         try {
           const result = e.target?.result;
           if (typeof result === "string") {
-            const data: JsonData[] = JSON.parse(result);
+            const data: JsonData = JSON.parse(result);
             if (
-              Array.isArray(data) &&
-              data.every((item) => typeof item === "object")
+              typeof data === "object" &&
+              Object.keys(data).every(
+                (key) =>
+                  /^0x[a-fA-F0-9]{40}$/.test(key) && !isNaN(Number(data[key]))
+              )
             ) {
               setJsonData(data);
               setError(null);
             } else {
-              setError("Invalid JSON format. Expected an array of objects.");
+              setError(
+                "Invalid JSON format. Expected an object with Ethereum addresses as keys and numeric values."
+              );
             }
           }
         } catch (err) {
@@ -113,7 +118,7 @@ const UploadJson: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(jsonData[0]), // Send the first object in the array
+          body: JSON.stringify(jsonData), // Send the first object in the array
         });
 
         if (!response.ok) {
@@ -124,7 +129,7 @@ const UploadJson: React.FC = () => {
         console.log("Merkle Root:", data.merkleRoot[0]);
 
         // Assuming merkleRoot is returned as an array, extract the first element
-        const merkleRootValue = data.merkleRoot[0]; // Set the root to display
+        const merkleRootValue = data.merkleRoot; // Set the root to display
         setMerkleRoot(merkleRootValue);
         alert("Merkle tree created successfully!");
 
@@ -200,40 +205,35 @@ const UploadJson: React.FC = () => {
         {/* Table of Addresses */}
         {jsonData && (
           <div className="overflow-x-auto">
-            {jsonData.map((dataItem, index) => (
-              <table
-                key={index}
-                className="w-full table-auto border-collapse bg-gray-700 rounded-lg shadow-lg mb-4" // Added margin-bottom here
-              >
-                <thead>
-                  <tr className="bg-gray-600">
-                    <th className="p-3 text-left border-b border-gray-600">
-                      Address
-                    </th>
-                    <th className="p-3 text-left border-b border-gray-600">
-                      Amount
-                    </th>
+            <table className="w-full table-auto border-collapse bg-gray-700 rounded-lg shadow-lg mb-4">
+              <thead>
+                <tr className="bg-gray-600">
+                  <th className="p-3 text-left border-b border-gray-600">
+                    Address
+                  </th>
+                  <th className="p-3 text-left border-b border-gray-600">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(jsonData).map(([address, amount]) => (
+                  <tr key={address} className="border-b border-gray-600">
+                    <td className="p-3 flex items-center">
+                      {/* Blockies Icon with rounded-full class */}
+                      <Blockies
+                        seed={address.toLowerCase()}
+                        size={10}
+                        scale={3}
+                        className="mr-2 rounded-full"
+                      />
+                      {address}
+                    </td>
+                    <td className="p-3">{amount}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(dataItem).map(([address, amount]) => (
-                    <tr key={address} className="border-b border-gray-600">
-                      <td className="p-3 flex items-center">
-                        {/* Blockies Icon with rounded-full class */}
-                        <Blockies
-                          seed={address.toLowerCase()}
-                          size={10}
-                          scale={3}
-                          className="mr-2 rounded-full"
-                        />
-                        {address}
-                      </td>
-                      <td className="p-3">{amount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ))}
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
