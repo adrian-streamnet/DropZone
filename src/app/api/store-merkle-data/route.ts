@@ -13,28 +13,36 @@ export async function POST(req: Request) {
     const { merkleRoot, deployedContract, participants } = body;
 
     // Validate required fields
-    if (!merkleRoot || !deployedContract || !participants || !Array.isArray(participants)) {
+    if (
+      !merkleRoot ||
+      !deployedContract ||
+      !participants ||
+      !Array.isArray(participants)
+    ) {
       return NextResponse.json(
         { error: "Missing required fields or invalid participants list" },
         { status: 400 }
       );
     }
 
-    // Validate participants structure
-    for (const participant of participants) {
-      if (!participant.participant || !participant.amount || typeof participant.claimed !== 'boolean') {
-        return NextResponse.json(
-          { error: "Invalid participant structure" },
-          { status: 400 }
-        );
+    // Validate participants structure and set claimed to false by default
+    const validatedParticipants = participants.map((participant) => {
+      if (!participant.participant || !participant.amount) {
+        throw new Error("Invalid participant structure");
       }
-    }
+      return {
+        participant: participant.participant,
+        amount: participant.amount,
+        claimed:
+          participant.claimed === undefined ? false : participant.claimed, // Set claimed to false by default
+      };
+    });
 
     // Create a new campaign record
     const newCampaign = new MerkleData({
       merkleRoot,
       deployedContract,
-      participants, // Store participants as an array of objects
+      participants: validatedParticipants, // Store participants with claimed status
     });
 
     // Save the campaign to the database
@@ -48,7 +56,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error saving campaign:", error);
     return NextResponse.json(
-      { error: "Error saving campaign" },
+      { error: error || "Error saving campaign" },
       { status: 500 }
     );
   }

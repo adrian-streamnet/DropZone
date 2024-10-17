@@ -160,6 +160,35 @@ const UploadJson: React.FC = () => {
           merkleRootValue
         );
 
+        const participants = Object.entries(jsonData).map(
+          ([address, amount]) => ({
+            participant: address,
+            amount,
+            claimed: false, // Default claimed status
+          })
+        );
+
+        // Second API call: Store the Merkle root, contract address, and participants
+        const secondResponse = await fetch("/api/store-merkle-data", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            merkleRoot: merkleRootValue,
+            deployedContract: computedAddress,
+            participants,
+          }),
+        });
+
+        if (!secondResponse.ok) {
+          throw new Error("Error storing Merkle data");
+        }
+
+        const secondData = await secondResponse.json();
+        console.log("Merkle Data stored:", secondData);
+        alert("Merkle data stored successfully!");
+
         const campaignData = {
           owner: address,
           merkleRoot: merkleRootValue,

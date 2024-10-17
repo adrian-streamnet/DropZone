@@ -45,11 +45,13 @@ export async function POST(request: NextRequest) {
       }
 
       // // Validate and convert cap to bigint
-      if (!isValidBigInt(cap)) {
-        throw new Error(`Invalid cap value: ${cap}`);
-      }
+      // if (!isValidBigInt(cap)) {
+      //   throw new Error(`Invalid cap value: ${cap}`);
+      // }
 
-      console.log(cap);
+      if (typeof cap !== "string" && typeof cap !== "number") {
+        throw new Error(`Invalid cap value type: ${typeof cap}`);
+      }
 
       const capBigInt = BigInt(cap); // Cast to bigint
       const packed = encodePacked(
