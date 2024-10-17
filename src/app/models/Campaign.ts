@@ -1,13 +1,15 @@
 import mongoose from "mongoose";
 
-const CampaignSchema = new mongoose.Schema({
-  owner: { type: String, required: true },
-  merkleRoot: { type: String, required: true },
-  campaignAlias: { type: String, required: true },
-  underlyingToken: { type: String, required: true },
-  deployedContract: { type: String, required: true },
-  participants: { type: [String], required: true }, 
-}, { timestamps: true });
+const CampaignSchema = new mongoose.Schema(
+  {
+    owner: { type: String, required: true },
+    merkleRoot: { type: String, required: true },
+    campaignAlias: { type: String, required: true },
+    underlyingToken: { type: String, required: true },
+    deployedContract: { type: String, required: true },
+  },
+  { timestamps: true }
+);
 
 const ParticipantSchema = new mongoose.Schema({
   participant: { type: String, required: true },
@@ -24,5 +26,5 @@ const CampaignSchemaForMerkle = new mongoose.Schema({
 export const MerkleData = mongoose.models.merkleData || mongoose.model("merkleData", CampaignSchemaForMerkle);
 
 
-export const Campaign = mongoose.models.Campaign || mongoose.model('Campaign', CampaignSchema);
-
+export const Campaign =
+  mongoose.models.Campaign || mongoose.model("Campaign", CampaignSchema);
