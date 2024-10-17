@@ -9,7 +9,8 @@ import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
 import DropZone from "@/artifacts/DropZone.json";
 import { ethers } from "ethers"; // Import ethers for salt generation
-import { toHex } from "viem";
+import { toHex, keccak256 } from "viem";
+import keccak256 from "viem";
 
 const client = initializeClient();
 
@@ -76,7 +77,8 @@ const UploadJson: React.FC = () => {
     try {
       console.log("Generating salt...");
       // Generate a random bytes32 salt using ethers.js
-      const generatedSalt = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+      // const generatedSalt = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+      const generatedSalt = keccak256(new Date());
       setSalt(generatedSalt);
       console.log("Generated Salt:", generatedSalt);
 
@@ -91,9 +93,9 @@ const UploadJson: React.FC = () => {
         args: [
           tokenAddress,
           address,
-          toHex(merkleRoot, { size: 32 }),
+          merkleRoot,
           "testHash", // Replace with actual merkleDataUri if needed
-          generatedSalt,
+          toHex(generatedSalt, { size: 32 }),
         ],
       });
 
