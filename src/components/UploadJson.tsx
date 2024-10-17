@@ -192,7 +192,7 @@ const UploadJson: React.FC = () => {
         const campaignData = {
           owner: address,
           merkleRoot: merkleRootValue,
-          campaignAlias: "My Campaign",
+          campaignAlias: "My Campaign3",
           underlyingToken: tokenAddress,
           deployedContract: computedAddress,
         };
