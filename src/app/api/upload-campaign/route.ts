@@ -16,7 +16,6 @@ export async function POST(req: Request) {
       campaignAlias,
       underlyingToken,
       deployedContract,
-      participants, 
     } = body;
 
     // Validate required fields
@@ -25,13 +24,10 @@ export async function POST(req: Request) {
       !merkleRoot ||
       !campaignAlias ||
       !underlyingToken ||
-      !deployedContract ||
-      !participants ||
-      !Array.isArray(participants) || // Check if participants is an array
-      participants.length === 0 // Ensure participants list is not empty
+      !deployedContract
     ) {
       return NextResponse.json(
-        { error: "Missing required fields or invalid participants list" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -43,7 +39,6 @@ export async function POST(req: Request) {
       campaignAlias,
       underlyingToken,
       deployedContract,
-      participants, // Store the participants array
     });
 
     // Save the campaign to the database
