@@ -74,7 +74,6 @@ const UploadJson: React.FC = () => {
 
     try {
       console.log("Generating salt...");
-      // Generate a random bytes32 salt using ethers.js
       const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
       const generatedSalt = keccak256(currentTime.toString() as HexString);
       setSalt(generatedSalt);
@@ -87,7 +86,9 @@ const UploadJson: React.FC = () => {
         abi: contractABI,
         client: client,
       });
-      let data = await contract.read.computeAddress([
+
+      // Get the computed address from the contract
+      const computedAddress = await contract.read.computeAddress([
         tokenAddress,
         address,
         merkleRoot,
@@ -95,7 +96,7 @@ const UploadJson: React.FC = () => {
         generatedSalt,
       ]);
 
-      console.log("computed address", data);
+      console.log("Computed Address:", computedAddress);
 
       // Deploy the DropZone contract with the required parameters
       const tx = await writeContractAsync({
@@ -106,13 +107,12 @@ const UploadJson: React.FC = () => {
         args: [tokenAddress, address, merkleRoot, "testHash", generatedSalt],
       });
 
-      console.log("Transaction hash:", tx);
-
       const receipt = await client.waitForTransactionReceipt({ hash: tx });
-      // Wait for the transaction to be mined
       console.log("Transaction receipt:", receipt);
 
       alert("DropZone deployed and Merkle Root updated successfully!");
+
+      return computedAddress; // Return the computed address
     } catch (error: any) {
       console.error("Error submitting to contract:", error);
       setError(
@@ -135,12 +135,13 @@ const UploadJson: React.FC = () => {
       setError(null);
 
       try {
+        // Create the Merkle tree and get the Merkle Root
         const response = await fetch("/api/create-tree", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(jsonData), // Send the JSON data
+          body: JSON.stringify(jsonData),
         });
 
         if (!response.ok) {
@@ -150,17 +151,45 @@ const UploadJson: React.FC = () => {
         const data = await response.json();
         console.log("Merkle Root:", data.merkleRoot[0]);
 
-        // Assuming merkleRoot is returned as a string
         const merkleRootValue = data.merkleRoot[0];
         setMerkleRoot(merkleRootValue);
-        alert("Merkle tree created successfully!");
 
-        // Call the contract submission function after successfully creating the Merkle tree
-        await submitInContract(tokenAddress, merkleRootValue);
+        // Call the contract submission function and get the computed address
+        const computedAddress = await submitInContract(
+          tokenAddress,
+          merkleRootValue
+        );
+
+        const campaignData = {
+          owner: address,
+          merkleRoot: merkleRootValue,
+          campaignAlias: "My Campaign",
+          underlyingToken: tokenAddress,
+          deployedContract: computedAddress,
+        };
+
+        // Make a POST request to your API to store the campaign
+        const apiResponse = await fetch("/api/upload-campaign", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(campaignData),
+        });
+
+        if (!apiResponse.ok) {
+          throw new Error("Error storing campaign");
+        }
+
+        const apiData = await apiResponse.json();
+        console.log("Campaign stored successfully:", apiData);
+
+        alert("Campaign deployed and stored successfully!");
       } catch (error: any) {
         console.error("Error submitting data:", error);
         setError(
-          error?.message || "Failed to create Merkle tree. Please try again."
+          error?.message ||
+            "Failed to create and store campaign. Please try again."
         );
       } finally {
         setIsLoading(false);

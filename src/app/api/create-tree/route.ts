@@ -44,10 +44,12 @@ export async function POST(request: NextRequest) {
         throw new Error(`Invalid Ethereum address: ${address}`);
       }
 
-      // Validate and convert cap to bigint
-      // if (!isValidBigInt(cap)) {
-      //   throw new Error(`Invalid cap value: ${cap}`);
-      // }
+      // // Validate and convert cap to bigint
+      if (!isValidBigInt(cap)) {
+        throw new Error(`Invalid cap value: ${cap}`);
+      }
+
+      console.log(cap);
 
       const capBigInt = BigInt(cap); // Cast to bigint
       const packed = encodePacked(
