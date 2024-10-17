@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     }
 
     // Find campaigns by ownerAddress
-    const campaigns = await MerkleData.find({ owner: ownerAddress });
+    const campaigns = await MerkleData.find({ owner: ownerAddress }).lean();
 
     // Check if any campaigns were found
     if (campaigns.length == 0) {
@@ -30,9 +30,20 @@ export async function GET(req: Request) {
       );
     }
 
+    const enrichedCampaigns = campaigns.map((campaign) => {
+      const totalAmount = campaign.participants.reduce((sum: any, participant:any) => {
+        return sum + BigInt(participant.amount); // Use BigInt to sum large amounts
+      }, BigInt(0)); // Start with BigInt(0)
+
+      return {
+        ...campaign, // Spread campaign fields
+        totalAmount: totalAmount.toString(), // Convert BigInt back to string for consistency
+      };
+    });
+
     // Return the found campaigns
     return NextResponse.json({
-      campaigns,
+      enrichedCampaigns,
     });
   } catch (error) {
     console.error("Error retrieving campaigns:", error);
