@@ -10,13 +10,15 @@ export async function POST(req: Request) {
     // Parse the JSON body
     const body = await req.json();
 
-    const { merkleRoot, deployedContract, campaignAlias, participants } = body;
+    const { owner, merkleRoot, deployedContract, campaignAlias, underlyingToken, participants } = body;
 
     // Validate required fields
     if (
+      !owner||
       !merkleRoot ||
       !deployedContract ||
       !campaignAlias ||
+      !underlyingToken||
       !participants ||
       !Array.isArray(participants)
     ) {
@@ -35,15 +37,17 @@ export async function POST(req: Request) {
         participant: participant.participant,
         amount: participant.amount,
         claimed:
-          participant.claimed === undefined ? false : participant.claimed, // Set claimed to false by default
+          participant.claimed === undefined ? false : participant.claimed, 
       };
     });
 
     // Create a new campaign record
     const newCampaign = new MerkleData({
+      owner,
       merkleRoot,
       deployedContract,
       campaignAlias,
+      underlyingToken,
       participants: validatedParticipants, // Store participants with claimed status
     });
 

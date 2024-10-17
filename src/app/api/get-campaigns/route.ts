@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/app/utils/mongodb";
-import { Campaign } from "@/app/models/Campaign";
+import { MerkleData } from "@/app/models/Campaign";
 
 export async function GET(req: Request) {
   try {
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     }
 
     // Find campaigns by ownerAddress
-    const campaigns = await Campaign.find({ owner: ownerAddress });
+    const campaigns = await MerkleData.find({ owner: ownerAddress });
 
     // Check if any campaigns were found
     if (campaigns.length == 0) {

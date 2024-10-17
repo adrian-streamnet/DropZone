@@ -104,36 +104,40 @@ const Page: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4">
-      <h1 className="text-2xl mb-6">Campaigns</h1>
-      <div className="w-full max-w-4xl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
+      <h1 className="text-3xl font-bold mb-8">Campaigns</h1>
+      <div className="w-full max-w-6xl">
         {campaigns.length > 0 ? (
           campaigns.map((campaign) => (
             <div
               key={campaign._id}
-              className="p-4 mb-4 border border-gray-700 rounded-lg bg-gray-800"
+              className="p-6 mb-6 border border-gray-700 rounded-lg bg-gray-800 shadow-lg transform transition-transform hover:scale-102"
             >
-              <h2 className="text-xl mb-2">{campaign.campaignAlias}</h2>
-              <p>
-                <strong>Owner:</strong> {campaign.owner}
-              </p>
-              <p>
-                <strong>Merkle Root:</strong> {campaign.merkleRoot}
-              </p>
-              <p>
-                <strong>Underlying Token:</strong> {campaign.underlyingToken}
-              </p>
-              <p>
-                <strong>Deployed Contract:</strong> {campaign.deployedContract}
-              </p>
-              <p>
-                <strong>Created At:</strong>{" "}
-                {new Date(campaign.createdAt).toLocaleString()}
-              </p>
-              <p>
-                <strong>Updated At:</strong>{" "}
-                {new Date(campaign.updatedAt).toLocaleString()}
-              </p>
+              <h2 className="text-2xl font-semibold text-blue-400 mb-3">
+                {campaign.campaignAlias}
+              </h2>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <p className="text-sm">
+                  <strong className="text-gray-400">Owner:</strong>{" "}
+                  {campaign.owner}
+                </p>
+                <p className="text-sm col-span-2">
+                  <strong className="text-gray-400">Merkle Root:</strong>
+                  <span className="block break-all">{campaign.merkleRoot}</span>
+                </p>
+                <p className="text-sm">
+                  <strong className="text-gray-400">Underlying Token:</strong>
+                  {campaign.underlyingToken}
+                </p>
+                <p className="text-sm">
+                  <strong className="text-gray-400">Deployed Contract:</strong>
+                  {campaign.deployedContract}
+                </p>
+                <p className="text-sm col-span-2">
+                  <strong className="text-gray-400">Created At:</strong>
+                  {new Date(campaign.createdAt).toLocaleString()}
+                </p>
+              </div>
               <button
                 onClick={() =>
                   fundAirdrop(
@@ -141,14 +145,14 @@ const Page: React.FC = () => {
                     campaign.underlyingToken as Address
                   )
                 }
-                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                className="mt-4 w-full bg-gradient-to-r from-blue-500 to-green-400 text-white px-6 py-3 rounded-lg shadow hover:from-blue-600 hover:to-green-500 transition-all"
               >
                 Fund Airdrop
               </button>
             </div>
           ))
         ) : (
-          <p>Loading campaigns...</p>
+          <p className="text-gray-400 text-center">Loading campaigns...</p>
         )}
       </div>
     </div>

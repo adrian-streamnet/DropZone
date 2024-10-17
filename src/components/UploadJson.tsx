@@ -89,7 +89,7 @@ const UploadJson: React.FC = () => {
       });
 
       // Get the computed address from the contract
-      const computedAddress = await contract.read.approval([
+      const computedAddress = await contract.read.computeAddress([
         tokenAddress,
         address,
         merkleRoot,
@@ -176,9 +176,11 @@ const UploadJson: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            owner: address,
             merkleRoot: merkleRootValue,
             deployedContract: computedAddress,
             campaignAlias: airDropAlias,
+            underlyingToken: tokenAddress,
             participants,
           }),
         });
@@ -191,29 +193,29 @@ const UploadJson: React.FC = () => {
         console.log("Merkle Data stored:", secondData);
         console.log("Merkle data stored successfully!");
 
-        const campaignData = {
-          owner: address,
-          merkleRoot: merkleRootValue,
-          campaignAlias: airDropAlias,
-          underlyingToken: tokenAddress,
-          deployedContract: computedAddress,
-        };
+        // const campaignData = {
+        //   owner: address,
+        //   merkleRoot: merkleRootValue,
+        //   campaignAlias: airDropAlias,
+        //   underlyingToken: tokenAddress,
+        //   deployedContract: computedAddress,
+        // };
 
-        // Make a POST request to your API to store the campaign
-        const apiResponse = await fetch("/api/upload-campaign", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(campaignData),
-        });
+        // // Make a POST request to your API to store the campaign
+        // const apiResponse = await fetch("/api/upload-campaign", {
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify(campaignData),
+        // });
 
-        if (!apiResponse.ok) {
-          throw new Error("Error storing campaign");
-        }
+        // if (!apiResponse.ok) {
+        //   throw new Error("Error storing campaign");
+        // }
 
-        const apiData = await apiResponse.json();
-        console.log("Campaign stored successfully:", apiData);
+        // const apiData = await apiResponse.json();
+        // console.log("Campaign stored successfully:", apiData);
 
         console.log("Campaign deployed and stored successfully!");
       } catch (error: any) {
