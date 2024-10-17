@@ -22,6 +22,7 @@ const UploadJson: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merkleRoot, setMerkleRoot] = useState<string | null>(null);
   const [tokenAddress, setTokenAddress] = useState<string>(""); // State for token address
+  const [airDropAlias, setDropAlias] = useState<string>(""); // State for token address
   const [salt, setSalt] = useState<string | null>(null); // State for salt
   const { writeContractAsync } = useWriteContract();
   const { address, isConnected } = useAccount();
@@ -88,7 +89,7 @@ const UploadJson: React.FC = () => {
       });
 
       // Get the computed address from the contract
-      const computedAddress = await contract.read.computeAddress([
+      const computedAddress = await contract.read.approval([
         tokenAddress,
         address,
         merkleRoot,
@@ -110,7 +111,7 @@ const UploadJson: React.FC = () => {
       const receipt = await client.waitForTransactionReceipt({ hash: tx });
       console.log("Transaction receipt:", receipt);
 
-      alert("DropZone deployed and Merkle Root updated successfully!");
+      console.log("DropZone deployed and Merkle Root updated successfully!");
 
       return computedAddress; // Return the computed address
     } catch (error: any) {
@@ -177,6 +178,7 @@ const UploadJson: React.FC = () => {
           body: JSON.stringify({
             merkleRoot: merkleRootValue,
             deployedContract: computedAddress,
+            campaignAlias: airDropAlias,
             participants,
           }),
         });
@@ -187,12 +189,12 @@ const UploadJson: React.FC = () => {
 
         const secondData = await secondResponse.json();
         console.log("Merkle Data stored:", secondData);
-        alert("Merkle data stored successfully!");
+        console.log("Merkle data stored successfully!");
 
         const campaignData = {
           owner: address,
           merkleRoot: merkleRootValue,
-          campaignAlias: "My Campaign3",
+          campaignAlias: airDropAlias,
           underlyingToken: tokenAddress,
           deployedContract: computedAddress,
         };
@@ -213,7 +215,7 @@ const UploadJson: React.FC = () => {
         const apiData = await apiResponse.json();
         console.log("Campaign stored successfully:", apiData);
 
-        alert("Campaign deployed and stored successfully!");
+        console.log("Campaign deployed and stored successfully!");
       } catch (error: any) {
         console.error("Error submitting data:", error);
         setError(
@@ -224,7 +226,7 @@ const UploadJson: React.FC = () => {
         setIsLoading(false);
       }
     } else {
-      alert("No data to submit or token address is missing!");
+      console.log("No data to submit or token address is missing!");
     }
   };
 
@@ -353,6 +355,18 @@ const UploadJson: React.FC = () => {
             type="text"
             value={tokenAddress}
             onChange={(e) => setTokenAddress(e.target.value)}
+            className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
+            placeholder="Enter token address"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Airdrop Alias
+          </label>
+          <input
+            type="text"
+            value={airDropAlias}
+            onChange={(e) => setDropAlias(e.target.value)}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
             placeholder="Enter token address"
           />

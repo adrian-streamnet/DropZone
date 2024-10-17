@@ -32,7 +32,6 @@ export async function GET(req: Request) {
 
     // Return the found campaigns
     return NextResponse.json({
-      message: "Campaigns retrieved successfully",
       campaigns,
     });
   } catch (error) {

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Blockies from "react-blockies";
 import { CONTRACT_ADDRESS } from "@/app/constants";
 import contractABI from "@/artifacts/DropZoneFactory.json";
@@ -12,84 +12,131 @@ function Page() {
   const { writeContractAsync } = useWriteContract();
   const { address, isConnected } = useAccount();
   const [error, setError] = useState<string | null>(null);
+  const [claimData, setClaimData] = useState<any[]>([]);
+  const [claimedItems, setClaimedItems] = useState<string[]>([]);
 
-  // State to track if the address has claimed
-  const [claimed, setClaimed] = useState(false);
+  useEffect(() => {
+    const fetchClaimableData = async () => {
+      try {
+        if (!address) return;
+        const response = await fetch(
+          `http://localhost:3000/api/get-claimable-data?participant=${address}`
+        );
+        const data = await response.json();
+        console.log(data);
+        setClaimData(data); // Setting the claimable data
+      } catch (error) {
+        console.error("Error fetching claimable data:", error);
+        setError("Error fetching claimable data");
+      }
+    };
 
-  const handleButtonClick = async () => {
-    if (!client) {
-      setError("Client is not initialized");
+    fetchClaimableData();
+  }, [address]);
+
+  const handleClaim = async (
+    contractAddress: string,
+    participantAddress: string
+  ) => {
+    if (!client || !address) {
+      setError("Client or address is not initialized");
       return;
     }
     try {
       const tx = await writeContractAsync({
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS, // Replace with the correct contract
         account: address,
         abi: contractABI,
-        functionName: "createDropZone",
-        args: ["0xAC55F9432d31cfc47B99606f013E70c62748d67E", address],
+        functionName: "createDropZone", // Adjust the function name if needed
+        args: [contractAddress, participantAddress],
       });
+
       console.log(tx);
-
-      // Wait for the transaction receipt
-      // const receipt = await client.waitForTransactionReceipt({ hash: tx });
-
-      // Update claimed state on successful transaction
-      setClaimed(true);
+      setClaimedItems((prev) => [...prev, contractAddress]);
       alert("Claim successful!");
     } catch (error) {
       console.error("Transaction failed:", error);
-      // alert("Claim failed. Please try again.");
+      alert("Claim failed. Please try again.");
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-3xl">
+      <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 className="text-2xl font-bold mb-6 text-center">
           Claim Your Drops
         </h1>
 
-        {/* Table of Addresses */}
+        {/* Table of Claimable Data */}
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse bg-gray-700 rounded-lg shadow-lg mb-4">
             <thead>
               <tr className="bg-gray-600">
                 <th className="p-3 text-left border-b border-gray-600">
-                  Address
+                  AirDrop campaign
                 </th>
                 <th className="p-3 text-left border-b border-gray-600">
-                  Claim
+                  Amount
+                </th>
+                <th className="p-3 text-left border-b border-gray-600">
+                  Action
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-600">
-                <td className="p-3 flex items-center">
-                  {/* Blockies Icon with rounded-full class */}
-                  <Blockies
-                    seed={address ? address.toLowerCase() : ""}
-                    size={10}
-                    scale={3}
-                    className="mr-2 rounded-full"
-                  />
-                  {address}
-                </td>
-                <td className="p-3">
-                  <button
-                    onClick={handleButtonClick}
-                    disabled={claimed} // Disable button if claimed
-                    className={`bg-blue-500 text-white px-4 py-2 rounded ${
-                      claimed ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {claimed ? "Claimed" : "Claim"}
-                  </button>
-                </td>
-              </tr>
+              {claimData.length > 0 ? (
+                claimData.map((item, index) => (
+                  <tr key={index} className="border-b border-gray-600">
+                    <td className="p-3 flex items-center">
+                      <Blockies
+                        seed={item.airDropAlias}
+                        size={10}
+                        scale={3}
+                        className="mr-2 rounded-full"
+                      />
+                      {item.airDropAlias ? item.airDropAlias : "Drop Zone"}
+                    </td>
+                    <td className="p-3">
+                      {Number(item.participant[0]?.amount) / 1e18} ETH
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() =>
+                          handleClaim(
+                            item.deployedContract,
+                            item.participant[0]?.participant
+                          )
+                        }
+                        disabled={
+                          claimedItems.includes(item.deployedContract) ||
+                          item.participant[0]?.claimed
+                        }
+                        className={`bg-blue-500 text-white px-4 py-2 rounded ${
+                          claimedItems.includes(item.deployedContract) ||
+                          item.participant[0]?.claimed
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }`}
+                      >
+                        {claimedItems.includes(item.deployedContract) ||
+                        item.participant[0]?.claimed
+                          ? "Claimed"
+                          : "Claim"}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="p-3 text-center" colSpan={3}>
+                    No claimable data available.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        {error && <p className="text-red-500 text-center">{error}</p>}
       </div>
     </div>
   );

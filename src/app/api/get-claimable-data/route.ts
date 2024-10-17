@@ -22,13 +22,16 @@ export async function GET(req: Request) {
     // Query the database for unclaimed participants with the provided address
     const campaignData = await MerkleData.find({
       "participants.participant": participantAddress,
-      "participants.claimed": false, // Ensure it's unclaimed
+      "participants.claimed": false, 
     });
+
+    
 
     // Filter relevant data for the response
     const result = campaignData.map((campaign) => ({
       deployedContract: campaign.deployedContract,
       merkleRoot: campaign.merkleRoot,
+      airDropAlias: campaign.campaignAlias,
       participant: campaign.participants.filter(
         (p: { participant: string; claimed: false }) =>
           p.participant === participantAddress && !p.claimed

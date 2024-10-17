@@ -20,6 +20,7 @@ const ParticipantSchema = new mongoose.Schema({
 const CampaignSchemaForMerkle = new mongoose.Schema({
   merkleRoot: { type: String, required: true },
   deployedContract: { type: String, required: true },
+  campaignAlias: { type: String, required: true },
   participants: [ParticipantSchema], // Array of participants
 });
 

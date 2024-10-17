@@ -10,12 +10,13 @@ export async function POST(req: Request) {
     // Parse the JSON body
     const body = await req.json();
 
-    const { merkleRoot, deployedContract, participants } = body;
+    const { merkleRoot, deployedContract, campaignAlias, participants } = body;
 
     // Validate required fields
     if (
       !merkleRoot ||
       !deployedContract ||
+      !campaignAlias ||
       !participants ||
       !Array.isArray(participants)
     ) {
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
     const newCampaign = new MerkleData({
       merkleRoot,
       deployedContract,
+      campaignAlias,
       participants: validatedParticipants, // Store participants with claimed status
     });
 

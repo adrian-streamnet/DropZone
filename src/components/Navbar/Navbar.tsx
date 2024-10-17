@@ -17,6 +17,7 @@ import { useAccount } from "wagmi";
 const navigation = [
   { name: "DropZone", href: "/", current: true },
   { name: "Create Campaign", href: "/create-campaign", current: false },
+  { name: "My Campaigns", href: "/my-campaigns", current: false },
   //   { name: "Projects", href: "/projects", current: false },
   //   { name: "Calendar", href: "#", current: false },
 ];
