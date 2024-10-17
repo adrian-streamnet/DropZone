@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import Blockies from "react-blockies"; // Import Blockies component
+import Blockies from "react-blockies";
 import { CONTRACT_ADDRESS } from "@/app/constants";
 import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
@@ -170,12 +170,37 @@ const UploadJson: React.FC = () => {
     }
   };
 
+  const downloadJSON = () => {
+    const jsonData = {
+      "0xbFc4A28D8F1003Bec33f4Fdb7024ad6ad1605AA8": "1000000000000000000",
+      "0x97861976283e6901b407D1e217B72c4007D9F64D": "2000000000000000000",
+    };
+    const fileName = "data.json"; // name of the file
+    const json = JSON.stringify(jsonData, null, 2); // convert JSON object to string
+    const blob = new Blob([json], { type: "application/json" }); // create a blob with the JSON data
+    const href = URL.createObjectURL(blob); // create a URL for the blob
+
+    // Create a link and trigger the download
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(href);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-3xl">
         <h1 className="text-2xl font-bold mb-6 text-center">
           Upload JSON File
         </h1>
+        <div>
+          <button onClick={downloadJSON}>Download format JSON?</button>
+        </div>
 
         {/* Drag-and-Drop Area */}
         <div
