@@ -20,7 +20,7 @@ function Page() {
       try {
         if (!address) return;
         const response = await fetch(
-          `http://localhost:3000/api/get-claimable-data?participant=${address}`
+          `/api/get-claimable-data?participant=${address}`
         );
         const data = await response.json();
         console.log(data);

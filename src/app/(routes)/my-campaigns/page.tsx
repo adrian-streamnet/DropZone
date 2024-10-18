@@ -17,6 +17,7 @@ interface Campaign {
   campaignAlias: string;
   underlyingToken: string;
   deployedContract: string;
+  totalAmount: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,10 +32,11 @@ const Page: React.FC = () => {
       if (!address) return; // If the wallet is not connected, don't fetch
       try {
         const response = await fetch(
-          `http://localhost:3000/api/get-campaigns/?ownerAddress=${address}`
+          `/api/get-campaigns/?ownerAddress=${address}`
         );
         const data = await response.json();
-        setCampaigns(data.campaigns); // Set the fetched campaigns
+        console.log("Data", data.enrichedCampaigns);
+        setCampaigns(data.enrichedCampaigns); // Set the fetched campaigns
       } catch (error) {
         console.error("Error fetching campaigns:", error);
       }
@@ -47,7 +49,8 @@ const Page: React.FC = () => {
 
   const fundAirdrop = async (
     deployedContract: Address,
-    underlyingToken: Address
+    underlyingToken: Address,
+    totalAmount: string // Accept totalAmount as a parameter
   ) => {
     console.log(deployedContract, underlyingToken);
     try {
@@ -67,18 +70,18 @@ const Page: React.FC = () => {
       ]);
       const balance = await contract.read.balanceOf([address]);
       console.log(balance);
-      if ((balance as bigint) <= 1000000) {
-        alert("balance karwao pehla");
+      if ((balance as bigint) <= BigInt(totalAmount)) {
+        alert("Insufficient balance");
         return;
       }
       console.log("Allowance: ", allowance);
-      if ((allowance as number) < 1000000) {
+      if ((allowance as number) < BigInt(totalAmount)) {
         const approveTx = await writeContractAsync({
           address: underlyingToken,
           account: address,
           abi: ERC20ABI.abi,
           functionName: "approve",
-          args: [deployedContract, 1000000],
+          args: [deployedContract, BigInt(totalAmount)],
         });
         console.log(approveTx);
         const approveReceipt = await client?.waitForTransactionReceipt({
@@ -107,7 +110,7 @@ const Page: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
       <h1 className="text-3xl font-bold mb-8">Campaigns</h1>
       <div className="w-full max-w-6xl">
-        {campaigns.length > 0 ? (
+        {campaigns?.length > 0 ? (
           campaigns.map((campaign) => (
             <div
               key={campaign._id}
@@ -142,7 +145,8 @@ const Page: React.FC = () => {
                 onClick={() =>
                   fundAirdrop(
                     campaign.deployedContract as Address,
-                    campaign.underlyingToken as Address
+                    campaign.underlyingToken as Address,
+                    campaign.totalAmount as string
                   )
                 }
                 className="mt-4 w-full bg-gradient-to-r from-blue-500 to-green-400 text-white px-6 py-3 rounded-lg shadow hover:from-blue-600 hover:to-green-500 transition-all"

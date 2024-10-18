@@ -370,7 +370,7 @@ const UploadJson: React.FC = () => {
             value={airDropAlias}
             onChange={(e) => setDropAlias(e.target.value)}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
-            placeholder="Enter token address"
+            placeholder="e.g: Funding.."
           />
         </div>
 
