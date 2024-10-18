@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from "react";
 import Blockies from "react-blockies";
 import { CONTRACT_ADDRESS } from "@/app/constants";
-import contractABI from "@/artifacts/DropZoneFactory.json";
+import contractABI from "@/artifacts/DropZone.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
+import { encodePacked, keccak256 } from "viem";
 
 const client = initializeClient();
 
@@ -24,7 +25,7 @@ function Page() {
         );
         const data = await response.json();
         console.log(data);
-        setClaimData(data); // Setting the claimable data
+        setClaimData(data);
       } catch (error) {
         console.error("Error fetching claimable data:", error);
         setError("Error fetching claimable data");
@@ -36,23 +37,35 @@ function Page() {
 
   const handleClaim = async (
     contractAddress: string,
-    participantAddress: string
+    merkleTree: string,
+    amount: string
   ) => {
     if (!client || !address) {
       setError("Client or address is not initialized");
       return;
     }
+
+    const leaf = keccak256(
+      encodePacked(["address", "uint256"], [address, BigInt(amount)])
+    );
+    console.log(leaf);
+    // const merkleProof = getProof(address);
+    const merkleProof = [[]];
+
     try {
-      const tx = await writeContractAsync({
-        address: CONTRACT_ADDRESS, // Replace with the correct contract
+      const claimTx = await writeContractAsync({
+        address: CONTRACT_ADDRESS,
         account: address,
-        abi: contractABI,
-        functionName: "createDropZone", // Adjust the function name if needed
-        args: [contractAddress, participantAddress],
+        abi: contractABI.abi,
+        functionName: "claimTokens",
+        args: [address, amount, merkleProof],
       });
 
-      console.log(tx);
-      setClaimedItems((prev) => [...prev, contractAddress]);
+      console.log(claimTx);
+      const claimReceipt = await client?.waitForTransactionReceipt({
+        hash: claimTx,
+      });
+      console.log("approved:", claimReceipt);
       alert("Claim successful!");
     } catch (error) {
       console.error("Transaction failed:", error);
