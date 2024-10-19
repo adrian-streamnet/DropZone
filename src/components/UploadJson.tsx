@@ -8,6 +8,7 @@ import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
 import { Address, getContract, keccak256 } from "viem";
+import { toast, Toaster } from "react-hot-toast"; // Import react-hot-toast
 
 const client = initializeClient();
 
@@ -66,21 +67,20 @@ const UploadJson: React.FC = () => {
   const submitInContract = async (tokenAddress: string, merkleRoot: string) => {
     if (!client) {
       setError("Client is not initialized");
+      toast.error("Client is not initialized."); // Error notification
       return;
     }
     if (!isConnected || !address) {
       setError("Wallet is not connected");
+      toast.error("Wallet is not connected."); // Error notification
       return;
     }
 
     try {
-      console.log("Generating salt...");
-      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const currentTime = Math.floor(Date.now() / 1000);
       const generatedSalt = keccak256(currentTime.toString() as HexString);
       setSalt(generatedSalt);
-      console.log("Generated Salt:", generatedSalt);
-
-      console.log("Submitting to contract...");
+      toast.success("Salt generated successfully!");
 
       const contract = getContract({
         address: CONTRACT_ADDRESS,
@@ -88,7 +88,6 @@ const UploadJson: React.FC = () => {
         client: client,
       });
 
-      // Get the computed address from the contract
       const computedAddress = await contract.read.computeAddress([
         tokenAddress,
         address,
@@ -97,9 +96,6 @@ const UploadJson: React.FC = () => {
         generatedSalt,
       ]);
 
-      console.log("Computed Address:", computedAddress);
-
-      // Deploy the DropZone contract with the required parameters
       const tx = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         account: address,
@@ -109,16 +105,14 @@ const UploadJson: React.FC = () => {
       });
 
       const receipt = await client.waitForTransactionReceipt({ hash: tx });
-      console.log("Transaction receipt:", receipt);
+      toast.success("Transaction confirmed!"); // Success notification
 
-      console.log("DropZone deployed and Merkle Root updated successfully!");
-
-      return computedAddress; // Return the computed address
+      return computedAddress;
     } catch (error: any) {
-      console.error("Error submitting to contract:", error);
       setError(
         error?.message || "Failed to submit to contract. Please try again."
       );
+      toast.error("Error submitting to contract."); // Error notification
     }
   };
 
@@ -134,9 +128,9 @@ const UploadJson: React.FC = () => {
     if (jsonData && tokenAddress) {
       setIsLoading(true);
       setError(null);
+      toast.loading("Creating AirDrop.....");
 
       try {
-        // Create the Merkle tree and get the Merkle Root
         const response = await fetch("/api/create-tree", {
           method: "POST",
           headers: {
@@ -150,12 +144,9 @@ const UploadJson: React.FC = () => {
         }
 
         const data = await response.json();
-        console.log("Merkle Root:", data.merkleRoot[0]);
-
         const merkleRootValue = data.merkleRoot[0];
         setMerkleRoot(merkleRootValue);
 
-        // Call the contract submission function and get the computed address
         const computedAddress = await submitInContract(
           tokenAddress,
           merkleRootValue
@@ -165,11 +156,10 @@ const UploadJson: React.FC = () => {
           ([address, amount]) => ({
             participant: address,
             amount,
-            claimed: false, // Default claimed status
+            claimed: false,
           })
         );
 
-        // Second API call: Store the Merkle root, contract address, and participants
         const secondResponse = await fetch("/api/store-merkle-data", {
           method: "POST",
           headers: {
@@ -190,45 +180,16 @@ const UploadJson: React.FC = () => {
         }
 
         const secondData = await secondResponse.json();
-        console.log("Merkle Data stored:", secondData);
-        console.log("Merkle data stored successfully!");
-
-        // const campaignData = {
-        //   owner: address,
-        //   merkleRoot: merkleRootValue,
-        //   campaignAlias: airDropAlias,
-        //   underlyingToken: tokenAddress,
-        //   deployedContract: computedAddress,
-        // };
-
-        // // Make a POST request to your API to store the campaign
-        // const apiResponse = await fetch("/api/upload-campaign", {
-        //   method: "POST",
-        //   headers: {
-        //     "Content-Type": "application/json",
-        //   },
-        //   body: JSON.stringify(campaignData),
-        // });
-
-        // if (!apiResponse.ok) {
-        //   throw new Error("Error storing campaign");
-        // }
-
-        // const apiData = await apiResponse.json();
-        // console.log("Campaign stored successfully:", apiData);
-
-        console.log("Campaign deployed and stored successfully!");
+        toast.success("Merkle data stored successfully!");
       } catch (error: any) {
-        console.error("Error submitting data:", error);
-        setError(
-          error?.message ||
-            "Failed to create and store campaign. Please try again."
-        );
+        setError(error?.message || "Failed to create and store campaign.");
+        toast.error("Error submitting data."); // Error notification
       } finally {
         setIsLoading(false);
+        toast.dismiss(); // Dismiss loading toast
       }
     } else {
-      console.log("No data to submit or token address is missing!");
+      toast.error("No data or token address is missing.");
     }
   };
 
@@ -390,6 +351,51 @@ const UploadJson: React.FC = () => {
           </div>
         )}
       </div>
+      <Toaster
+        toastOptions={{
+          // Custom styling for the toasts
+          success: {
+            style: {
+              background: "#1E1E1E", // Matte black background
+              color: "#00FF00", // Green text for success
+              border: "1px solid #00FF00",
+            },
+            iconTheme: {
+              primary: "#00FF00", // Green icon
+              secondary: "#1E1E1E", // Secondary matte black color
+            },
+          },
+          error: {
+            style: {
+              background: "#1E1E1E", // Matte black background
+              color: "#FF0000", // Red text for error
+              border: "1px solid #FF0000",
+            },
+            iconTheme: {
+              primary: "#FF0000", // Red icon
+              secondary: "#1E1E1E", // Secondary matte black color
+            },
+          },
+          loading: {
+            style: {
+              background: "#1E1E1E", // Matte black background
+              color: "#FFFFFF", // White text for loading
+              border: "1px solid #FFFFFF",
+            },
+            iconTheme: {
+              primary: "#FFFFFF", // White icon
+              secondary: "#1E1E1E", // Secondary matte black color
+            },
+          },
+          // Default toast styles
+          style: {
+            background: "#1E1E1E", // Matte black background for all toasts
+            borderRadius: "8px",
+            padding: "16px",
+            color: "#FFFFFF", // White text
+          },
+        }}
+      />
     </div>
   );
 };
