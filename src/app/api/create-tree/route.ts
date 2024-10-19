@@ -10,20 +10,6 @@ function isValidAddress(address: string): address is `0x${string}` {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
-// Utility function to check if a value is a valid bigint
-function isValidBigInt(value: unknown): value is bigint {
-  try {
-    return (
-      typeof value === "bigint" ||
-      (typeof value === "number" && Number.isInteger(value))
-    );
-  } catch {
-    return false;
-  }
-}
-
-let storedTree: MerkleTree | null = null;
-
 export async function POST(request: NextRequest) {
   console.log("Received a POST request for create-tree");
 
@@ -44,11 +30,6 @@ export async function POST(request: NextRequest) {
         throw new Error(`Invalid Ethereum address: ${address}`);
       }
 
-      // // Validate and convert cap to bigint
-      // if (!isValidBigInt(cap)) {
-      //   throw new Error(`Invalid cap value: ${cap}`);
-      // }
-
       if (typeof cap !== "string" && typeof cap !== "number") {
         throw new Error(`Invalid cap value type: ${typeof cap}`);
       }
@@ -68,11 +49,10 @@ export async function POST(request: NextRequest) {
     });
 
     const merkleRoot = merkleTree.getRoot().toString("hex");
-    storedTree = merkleTree;
 
     return NextResponse.json({
       message: "Merkle tree created successfully",
-      merkleRoot: [`0x${merkleRoot}`], // Dynamic key using bracket notation
+      merkleRoot: [`0x${merkleRoot}`], 
     });
   } catch (error) {
     console.error("Error creating Merkle tree:", error);

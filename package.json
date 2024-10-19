@@ -27,6 +27,7 @@
     "react-blockies": "^1.4.1",
     "react-dom": "^18",
     "react-dropzone": "^14.2.9",
+    "react-hot-toast": "^2.4.1",
     "react-toastify": "^10.0.6",
     "viem": "2.x",
     "wagmi": "^2.12.19"

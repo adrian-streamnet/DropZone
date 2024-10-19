@@ -8,6 +8,8 @@ import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
 import { Address, getContract, keccak256 } from "viem";
+import toast, { Toaster } from "react-hot-toast";
+import Loader from "@/components/Loader";
 
 const client = initializeClient();
 
@@ -21,6 +23,7 @@ const UploadJson: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merkleRoot, setMerkleRoot] = useState<string | null>(null);
+  const [computedAddress, setComputedAddress] = useState<string | null>(null);
   const [tokenAddress, setTokenAddress] = useState<string>(""); // State for token address
   const [airDropAlias, setDropAlias] = useState<string>(""); // State for token address
   const [salt, setSalt] = useState<string | null>(null); // State for salt
@@ -97,6 +100,7 @@ const UploadJson: React.FC = () => {
         generatedSalt,
       ]);
 
+      setComputedAddress(computedAddress as HexString);
       console.log("Computed Address:", computedAddress);
 
       // Deploy the DropZone contract with the required parameters
@@ -192,32 +196,8 @@ const UploadJson: React.FC = () => {
         const secondData = await secondResponse.json();
         console.log("Merkle Data stored:", secondData);
         console.log("Merkle data stored successfully!");
-
-        // const campaignData = {
-        //   owner: address,
-        //   merkleRoot: merkleRootValue,
-        //   campaignAlias: airDropAlias,
-        //   underlyingToken: tokenAddress,
-        //   deployedContract: computedAddress,
-        // };
-
-        // // Make a POST request to your API to store the campaign
-        // const apiResponse = await fetch("/api/upload-campaign", {
-        //   method: "POST",
-        //   headers: {
-        //     "Content-Type": "application/json",
-        //   },
-        //   body: JSON.stringify(campaignData),
-        // });
-
-        // if (!apiResponse.ok) {
-        //   throw new Error("Error storing campaign");
-        // }
-
-        // const apiData = await apiResponse.json();
-        // console.log("Campaign stored successfully:", apiData);
-
         console.log("Campaign deployed and stored successfully!");
+        toast.success("Campaign deployed :)");
       } catch (error: any) {
         console.error("Error submitting data:", error);
         setError(
@@ -256,6 +236,7 @@ const UploadJson: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
+      <Toaster />
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-3xl">
         <h1 className="text-2xl font-bold mb-6 text-center">
           Upload JSON File
@@ -379,14 +360,48 @@ const UploadJson: React.FC = () => {
           disabled={isLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-md transition duration-300 ease-in-out"
         >
-          {isLoading ? "Submitting..." : "Submit"}
+          {isLoading ? (
+            <div className="flex items-center justify-center w-full">
+              <Loader size={20} className="mr-2" />
+            </div>
+          ) : (
+            "Submit"
+          )}
         </button>
 
-        {/* Display Merkle Root and Salt if available */}
         {merkleRoot && (
-          <div className="mt-4 text-green-500">
-            <p>Merkle Root: {merkleRoot}</p>
-            {salt && <p>Salt: {salt}</p>}
+          <div className="mt-6 p-4 bg-gray-700 border border-gray-600 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold text-blue-300 mb-2">
+              Verification Details
+            </h3>
+            <div className="space-y-2">
+              <div className="text-gray-200">
+                <span className="font-medium mr-2 text-blue-200">
+                  Merkle Root:
+                </span>
+                <span className="font-mono bg-gray-600 px-3 py-2 rounded break-all mt-1 inline-block">
+                  {merkleRoot}
+                </span>
+              </div>
+              {salt && (
+                <div className="text-gray-200">
+                  <span className="font-medium mr-2 text-blue-200">Salt:</span>
+                  <span className="font-mono bg-gray-600 px-3 py-2 rounded break-all mt-1 inline-block">
+                    {salt}
+                  </span>
+                </div>
+              )}
+              {computedAddress && (
+                <div className="text-gray-200">
+                  <span className="font-medium mr-2 text-blue-200">
+                    Computed Address:
+                  </span>
+                  <span className="font-mono bg-gray-600 px-3 py-2 rounded break-all mt-1 inline-block">
+                    {computedAddress}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
