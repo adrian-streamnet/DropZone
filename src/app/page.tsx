@@ -5,7 +5,8 @@ import { CONTRACT_ADDRESS } from "@/app/constants";
 import contractABI from "@/artifacts/DropZone.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
-import { encodePacked, keccak256 } from "viem";
+import toast, { Toaster } from "react-hot-toast";
+import Loader from "@/components/Loader";
 
 const client = initializeClient();
 
@@ -15,10 +16,14 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
   const [claimData, setClaimData] = useState<any[]>([]);
   const [claimedItems, setClaimedItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchClaimableData = async () => {
       try {
+        setIsLoading(true);
+
         if (!address) return;
         const response = await fetch(
           `/api/get-claimable-data?participant=${address}`
@@ -29,6 +34,8 @@ function Page() {
       } catch (error) {
         console.error("Error fetching claimable data:", error);
         setError("Error fetching claimable data");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -37,24 +44,52 @@ function Page() {
 
   const handleClaim = async (
     contractAddress: string,
-    merkleTree: string,
-    amount: string
+    merkleRoot: string,
+    amount: string,
+    index: number
   ) => {
+    console.log(contractAddress);
+    console.log(merkleRoot);
+    console.log(amount);
     if (!client || !address) {
+      toast.error("Please connect your wallet");
       setError("Client or address is not initialized");
       return;
     }
 
-    const leaf = keccak256(
-      encodePacked(["address", "uint256"], [address, BigInt(amount)])
-    );
-    console.log(leaf);
-    // const merkleProof = getProof(address);
-    const merkleProof = [[]];
-
+    setLoading(index.toString());
     try {
+      // Call the generate-proof API with the correct JSON payload
+      const proofResponse = await fetch("/api/generate-proof", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          merkleRoot,
+          participant: address,
+          amount,
+        }),
+      });
+
+      if (!proofResponse.ok) {
+        toast.error("Failed to generate proof");
+        throw new Error("Failed to generate proof");
+      }
+
+      const { proof } = await proofResponse.json();
+
+      // Ensure that the proof is an array
+      const merkleProof = proof || [];
+
+      if (merkleProof.length === 0) {
+        toast.error("error generating merkle proof");
+        throw new Error("Invalid Merkle proof");
+      }
+
+      // Call the claimTokens function from the contract
       const claimTx = await writeContractAsync({
-        address: CONTRACT_ADDRESS,
+        address: contractAddress,
         account: address,
         abi: contractABI.abi,
         functionName: "claimTokens",
@@ -62,23 +97,51 @@ function Page() {
       });
 
       console.log(claimTx);
+
+      // Wait for the transaction to be confirmed
       const claimReceipt = await client?.waitForTransactionReceipt({
         hash: claimTx,
       });
-      console.log("approved:", claimReceipt);
-      alert("Claim successful!");
+
+      const claimTrue = await fetch("/api/claim-participant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contractAddress: contractAddress,
+          participant: address,
+        }),
+      });
+
+      if (!claimTrue.ok) {
+        toast.error("Failed to generate proof");
+        throw new Error("Failed to generate proof");
+      }
+
+      console.log("Claim successful:", claimReceipt);
+      toast.success("Claim successful :)");
     } catch (error) {
+      toast.error("Contract not funded yet");
       console.error("Transaction failed:", error);
-      alert("Claim failed. Please try again.");
+      toast.error("Transaction failed, Please try again :(");
+    } finally {
+      setLoading(null);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
+      <Toaster />
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 className="text-2xl font-bold mb-6 text-center">
           Claim Your Drops
         </h1>
+        {isLoading && (
+          <div className="flex justify-center mb-4">
+            <h1> fetching your drops, hold tight...</h1>
+          </div>
+        )}
 
         {/* Table of Claimable Data */}
         <div className="overflow-x-auto">
@@ -117,24 +180,19 @@ function Page() {
                         onClick={() =>
                           handleClaim(
                             item.deployedContract,
-                            item.participant[0]?.participant
+                            item.merkleRoot, // Assuming you have the merkleRoot in the claimData
+                            item.participant[0]?.amount, // Assuming amount is in participant array
+                            index // Pass index to identify the loading button
                           )
                         }
-                        disabled={
-                          claimedItems.includes(item.deployedContract) ||
-                          item.participant[0]?.claimed
-                        }
-                        className={`bg-blue-500 text-white px-4 py-2 rounded ${
-                          claimedItems.includes(item.deployedContract) ||
-                          item.participant[0]?.claimed
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex justify-center items-center"
+                        disabled={loading === index.toString()} // Disable button while loading
                       >
-                        {claimedItems.includes(item.deployedContract) ||
-                        item.participant[0]?.claimed
-                          ? "Claimed"
-                          : "Claim"}
+                        {loading === index.toString() ? (
+                          <Loader size={20} className="mr-2" /> // Use the Loader component
+                        ) : (
+                          "Claim"
+                        )}
                       </button>
                     </td>
                   </tr>
@@ -142,7 +200,7 @@ function Page() {
               ) : (
                 <tr>
                   <td className="p-3 text-center" colSpan={3}>
-                    No claimable data available.
+                    {isLoading ? "Loading..." : "No claimable data available."}
                   </td>
                 </tr>
               )}
