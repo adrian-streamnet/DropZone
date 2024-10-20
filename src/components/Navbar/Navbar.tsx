@@ -5,21 +5,16 @@ import {
   DisclosureButton,
   DisclosurePanel,
   Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  Transition,
 } from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
+import { usePathname } from "next/navigation";
 
 const navigation = [
-  { name: "DropZone", href: "/", current: true },
-  { name: "Create Campaign", href: "/create-campaign", current: false },
-  { name: "My Campaigns", href: "/my-campaigns", current: false },
-  //   { name: "Projects", href: "/projects", current: false },
-  //   { name: "Calendar", href: "#", current: false },
+  { name: "DropZone", href: "/" },
+  { name: "Create Campaign", href: "/create-campaign" },
+  { name: "My Campaigns", href: "/my-campaigns" },
 ];
 
 function classNames(...classes: string[]) {
@@ -28,8 +23,10 @@ function classNames(...classes: string[]) {
 
 export default function Navbar() {
   const { address, isConnected } = useAccount();
+  const pathname = usePathname(); // Get the current route
+
   return (
-    <Disclosure as="nav" className="bg-white">
+    <Disclosure as="nav" className="bg-gray-800 text-white">
       {({ open }) => (
         <>
           <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -48,38 +45,29 @@ export default function Navbar() {
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="hidden sm:ml-6 sm:block">
                   <div className="flex space-x-4">
-                    <>
-                      {navigation.map((item) => {
-                        const isCurrent = item.href;
-
-                        return (
-                          <a
-                            key={item.name}
-                            href={
-                              item.href === "/user/:address"
-                                ? `/user/${address}`
-                                : item.href
-                            }
-                            className={classNames(
-                              isCurrent
-                                ? " font-bold uppercase text-black"
-                                : "text-gray-300 hover:bg-gray-700 hover:text-white",
-                              "rounded-md px-3 py-2 text-sm font-medium"
-                            )}
-                            aria-current={isCurrent ? "page" : undefined}
-                          >
-                            {item.name}
-                          </a>
-                        );
-                      })}
-                    </>
+                    {navigation.map((item) => (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        className={classNames(
+                          pathname === item.href
+                            ? "text-white font-bold uppercase"
+                            : "text-gray-400 hover:bg-gray-700 hover:text-white",
+                          "rounded-md px-3 py-2 text-sm font-medium transition duration-300"
+                        )}
+                        aria-current={
+                          pathname === item.href ? "page" : undefined
+                        }
+                      >
+                        {item.name}
+                      </a>
+                    ))}
                   </div>
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                {/* Profile dropdown */}
                 <Menu as="div" className="relative ml-3">
-                  {isConnected ? <ConnectButton /> : <ConnectButton />}
+                  <ConnectButton />
                 </Menu>
               </div>
             </div>
@@ -93,12 +81,12 @@ export default function Navbar() {
                   as="a"
                   href={item.href}
                   className={classNames(
-                    item.current
-                      ? "bg-gray-900 text-white"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                    pathname === item.href
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-400 hover:bg-gray-700 hover:text-white",
                     "block rounded-md px-3 py-2 text-base font-medium"
                   )}
-                  aria-current={item.current ? "page" : undefined}
+                  aria-current={pathname === item.href ? "page" : undefined}
                 >
                   {item.name}
                 </DisclosureButton>

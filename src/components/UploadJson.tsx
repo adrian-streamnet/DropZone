@@ -7,9 +7,11 @@ import { CONTRACT_ADDRESS } from "@/app/constants";
 import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
-import { Address, getContract, keccak256 } from "viem";
+import { Address, formatEther, getContract, keccak256 } from "viem";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/Loader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faDownload } from "@fortawesome/free-solid-svg-icons";
 
 const client = initializeClient();
 
@@ -52,7 +54,7 @@ const UploadJson: React.FC = () => {
               setError(null);
             } else {
               setError(
-                "Invalid JSON format. Expected an object with Ethereum addresses as keys and numeric values."
+                "Invalid JSON format. Expected an object with  addresses as keys and numeric values."
               );
             }
           }
@@ -231,8 +233,17 @@ const UploadJson: React.FC = () => {
         <h1 className="text-2xl font-bold mb-6 text-center">
           Upload JSON File
         </h1>
-        <div>
-          <button onClick={downloadJSON}>Download format JSON?</button>
+        <div className="mb-4">
+          <button
+            onClick={downloadJSON}
+            className="text-whiterounded-xl transition-all flex items-center gap-2"
+          >
+            Download format JSON?
+            <FontAwesomeIcon
+              icon={faDownload}
+              className="text-white animate-ping text-sm"
+            />
+          </button>
         </div>
 
         {/* Drag-and-Drop Area */}
@@ -311,7 +322,7 @@ const UploadJson: React.FC = () => {
                       />
                       {address}
                     </td>
-                    <td className="p-3">{amount}</td>
+                    <td className="p-3">{formatEther(BigInt(amount))} BTT</td>
                   </tr>
                 ))}
               </tbody>

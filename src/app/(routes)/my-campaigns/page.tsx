@@ -8,6 +8,14 @@ import { Address, getContract } from "viem";
 import { initializeClient } from "@/app/utils/publicClient";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/Loader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUser,
+  faKey,
+  faCoins,
+  faFileContract,
+  faCalendarAlt,
+} from "@fortawesome/free-solid-svg-icons";
 
 const client = initializeClient();
 
@@ -123,50 +131,92 @@ const Page: React.FC = () => {
       setLoadingAirdropIndex(null);
     }
   };
+  const truncateAddress = (address: string) => {
+    return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
+  };
+
+  const renderSkeletons = () => (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={index}
+          className="p-6 bg-gray-800 rounded-3xl shadow-lg animate-pulse"
+        >
+          <div className="h-6 bg-gray-700 rounded w-3/4 mb-4"></div>
+          <div className="h-4 bg-gray-700 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-700 rounded w-2/3 mb-2"></div>
+          <div className="h-4 bg-gray-700 rounded w-1/3 mb-4"></div>
+          <div className="h-10 bg-gray-700 rounded w-full"></div>
+        </div>
+      ))}
+    </>
+  );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
-      <Toaster />
-      <h1 className="text-3xl font-bold mb-8">Campaigns</h1>
-      <div className="w-full max-w-6xl">
+    <div className="min-h-screen flex flex-col items-center bg-gray-900 text-white p-8">
+      <h1 className="text-5xl font-extrabold text-center mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+        Campaigns
+      </h1>
+      <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {loadingCampaigns ? (
-          <p className="text-gray-400 text-center">Loading campaigns...</p>
+          renderSkeletons()
         ) : campaigns.length > 0 ? (
           campaigns.map((campaign, index) => {
             return (
               <div
                 key={campaign._id}
-                className="p-6 mb-6 border border-gray-700 rounded-lg bg-gray-800 shadow-lg transform transition-transform hover:scale-102"
+                className="p-8 bg-gray-800 rounded-3xl shadow-lg transition-transform transform hover:scale-105 hover:shadow-2xl hover:bg-gray-700 overflow-hidden"
               >
-                <h2 className="text-2xl font-semibold text-blue-400 mb-3">
+                <h2 className="text-2xl font-bold text-gray-100 mb-4 text-center">
                   {campaign.campaignAlias}
                 </h2>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <p className="text-sm">
-                    <strong className="text-gray-400">Owner:</strong>{" "}
-                    {campaign.owner}
+                <div className="text-sm text-gray-400 space-y-3 mb-6">
+                  <p>
+                    <FontAwesomeIcon
+                      icon={faUser}
+                      className="mr-2 text-blue-500"
+                    />
+                    <strong className="text-gray-300">Owner:</strong>{" "}
+                    {truncateAddress(campaign.owner)}
                   </p>
-                  <p className="text-sm col-span-2">
-                    <strong className="text-gray-400">Merkle Root:</strong>
+                  <p>
+                    <FontAwesomeIcon
+                      icon={faKey}
+                      className="mr-2 text-green-500"
+                    />
+                    <strong className="text-gray-300">Merkle Root:</strong>{" "}
                     <span className="block break-all">
                       {campaign.merkleRoot}
                     </span>
                   </p>
-                  <p className="text-sm">
-                    <strong className="text-gray-400">Underlying Token:</strong>
-                    {campaign.underlyingToken}
+                  <p>
+                    <FontAwesomeIcon
+                      icon={faCoins}
+                      className="mr-2 text-yellow-500"
+                    />
+                    <strong className="text-gray-300">Underlying Token:</strong>{" "}
+                    {truncateAddress(campaign.underlyingToken)}
                   </p>
-                  <p className="text-sm">
-                    <strong className="text-gray-400">
+                  <p>
+                    <FontAwesomeIcon
+                      icon={faFileContract}
+                      className="mr-2 text-purple-500"
+                    />
+                    <strong className="text-gray-300">
                       Deployed Contract:
-                    </strong>
-                    {campaign.deployedContract}
+                    </strong>{" "}
+                    {truncateAddress(campaign.deployedContract)}
                   </p>
-                  <p className="text-sm col-span-2">
-                    <strong className="text-gray-400">Created At:</strong>
+                  <p>
+                    <FontAwesomeIcon
+                      icon={faCalendarAlt}
+                      className="mr-2 text-red-500"
+                    />
+                    <strong className="text-gray-300">Created At:</strong>{" "}
                     {new Date(campaign.createdAt).toLocaleString()}
                   </p>
                 </div>
+
                 <button
                   onClick={async () => {
                     setLoadingAirdropIndex(index); // Set loading for the clicked campaign
@@ -177,10 +227,10 @@ const Page: React.FC = () => {
                       index
                     );
                   }}
-                  className={`mt-4 w-full bg-gradient-to-r from-blue-500 to-green-400 text-white px-6 py-3 rounded-lg shadow transition-all ${
+                  className={`w-full bg-gradient-to-r from-blue-500 to-green-400 text-gray-100 font-medium py-2 px-4 rounded-2xl transition-all shadow ${
                     loadingAirdropIndex === index
                       ? "opacity-50 cursor-not-allowed"
-                      : "hover:from-blue-600 hover:to-green-500"
+                      : "hover:from-blue-600 hover:to-green-500 hover:bg-blue-700 hover:text-white"
                   }`}
                   disabled={loadingAirdropIndex === index} // Disable the button while loading
                 >

@@ -89,11 +89,11 @@ function Page() {
 
       // Call the claimTokens function from the contract
       const claimTx = await writeContractAsync({
-        address: contractAddress,
-        account: address,
+        address: contractAddress as `0x${string}`,
+        account: address as `0x${string}`,
         abi: contractABI.abi,
         functionName: "claimTokens",
-        args: [address, amount, merkleProof],
+        args: [address as `0x${string}`, amount, merkleProof],
       });
 
       console.log(claimTx);
@@ -173,7 +173,7 @@ function Page() {
                       {item.airDropAlias ? item.airDropAlias : "Drop Zone"}
                     </td>
                     <td className="p-3">
-                      {Number(item.participant[0]?.amount) / 1e18} ETH
+                      {Number(item.participant[0]?.amount) / 1e18} BTT
                     </td>
                     <td className="p-3">
                       <button

@@ -19,24 +19,31 @@ export async function GET(req: Request) {
       );
     }
 
-    // Query the database for unclaimed participants with the provided address
+    // Query the database for participants with the provided address
     const campaignData = await MerkleData.find({
       "participants.participant": participantAddress,
-      "participants.claimed": false, 
     });
 
-    
-
     // Filter relevant data for the response
-    const result = campaignData.map((campaign) => ({
-      deployedContract: campaign.deployedContract,
-      merkleRoot: campaign.merkleRoot,
-      airDropAlias: campaign.campaignAlias,
-      participant: campaign.participants.filter(
-        (p: { participant: string; claimed: false }) =>
-          p.participant === participantAddress && !p.claimed
-      ),
-    }));
+    const result = campaignData
+      .map((campaign) => {
+        const unclaimedParticipants = campaign.participants.filter(
+          (p: any) => p.participant === participantAddress && !p.claimed
+        );
+
+        // Skip the campaign if no unclaimed participants are found
+        if (unclaimedParticipants.length === 0) {
+          return null;
+        }
+
+        return {
+          deployedContract: campaign.deployedContract,
+          merkleRoot: campaign.merkleRoot,
+          airDropAlias: campaign.campaignAlias,
+          participant: unclaimedParticipants, // Only unclaimed participants
+        };
+      })
+      .filter((campaign) => campaign !== null); // Remove campaigns that were skipped
 
     // Return the result
     return NextResponse.json(result);
