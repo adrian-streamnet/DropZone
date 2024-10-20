@@ -229,35 +229,44 @@ const UploadJson: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
       <Toaster />
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-3xl">
-        <h1 className="text-2xl font-bold mb-6 text-center">
+      <div className="bg-gray-800 p-6 rounded-3xl shadow-lg w-full max-w-3xl">
+        <h1 className="text-2xl font-bold mb-6 text-center ios-large-title">
           Upload JSON File
         </h1>
+
+        <p className="mb-2 ios-headline">
+          Upload your JSON file containing participant addresses and token
+          amounts.
+        </p>
+        <p className="mb-4 ios-headline">
+          If you're unsure, click the button below to download a sample JSON
+          structure to edit.
+        </p>
+
         <div className="mb-4">
           <button
             onClick={downloadJSON}
-            className="text-whiterounded-xl transition-all flex items-center gap-2"
+            className="text-white rounded-full  flex items-center gap-2 bg-blue-600 px-4 py-2 hover:bg-blue-700"
           >
-            Download format JSON?
-            <FontAwesomeIcon
+            Download format JSON
+            {/* <FontAwesomeIcon
               icon={faDownload}
-              className="text-white animate-ping text-sm"
-            />
+              className="text-white text-sm"
+              size="3x"
+            /> */}
           </button>
         </div>
 
         {/* Drag-and-Drop Area */}
         <div
           {...getRootProps()}
-          className={`cursor-pointer p-12 flex justify-center bg-white border border-dashed border-gray-300 rounded-xl ${
-            isDragActive
-              ? "bg-gray-100"
-              : "dark:bg-neutral-800 dark:border-neutral-600"
-          } mb-4`} // Added margin-bottom here
+          className={`cursor-pointer p-12 flex justify-center bg-gray-700 border-2 border-dashed border-gray-600 rounded-3xl ${
+            isDragActive ? "bg-gray-600" : ""
+          } mb-4`}
         >
           <input {...getInputProps()} />
           <div className="text-center">
-            <span className="inline-flex justify-center items-center size-16 bg-gray-100 text-gray-800 rounded-full dark:bg-neutral-700 dark:text-neutral-200">
+            <span className="inline-flex justify-center items-center size-16 bg-gray-600 text-gray-200 rounded-full">
               <svg
                 className="shrink-0 size-6"
                 xmlns="http://www.w3.org/2000/svg"
@@ -276,55 +285,63 @@ const UploadJson: React.FC = () => {
               </svg>
             </span>
 
-            <div className="mt-4 flex flex-wrap justify-center text-sm leading-6 text-gray-600">
-              <span className="pe-1 font-medium text-gray-800 dark:text-neutral-200">
+            <div className="mt-4 flex flex-wrap justify-center text-sm leading-6 text-gray-300">
+              <span className="pe-1 font-medium">
                 {isDragActive
                   ? "Drop the file here..."
                   : "Drop your file here or"}
               </span>
-              <span className="bg-white font-semibold text-blue-600 hover:text-blue-700 rounded-lg decoration-2 hover:underline focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2 dark:bg-neutral-800 dark:text-blue-500 dark:hover:text-blue-600">
+              <span className="font-semibold text-blue-400 hover:text-blue-300 rounded-lg decoration-2 hover:underline focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-400 focus-within:ring-offset-2">
                 browse
               </span>
             </div>
 
-            <p className="mt-1 text-xs text-gray-400 dark:text-neutral-400">
-              Pick a JSON file.
-            </p>
+            <p className="mt-1 text-xs text-gray-400">Pick a JSON file.</p>
           </div>
         </div>
 
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {error && (
+          <div className="text-red-500 mb-4 rounded-xl bg-red-900 bg-opacity-20 p-3">
+            {error}
+          </div>
+        )}
 
         {/* Table of Addresses */}
         {jsonData && (
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto border-collapse bg-gray-700 rounded-lg shadow-lg mb-4">
+          <div className="overflow-x-auto rounded-2xl mb-4">
+            <table className="w-full table-auto border-collapse bg-gray-700 shadow-lg">
               <thead>
                 <tr className="bg-gray-600">
-                  <th className="p-3 text-left border-b border-gray-600">
+                  <th className="p-3 text-left border-b border-gray-500 rounded-tl-2xl">
                     Address
                   </th>
-                  <th className="p-3 text-left border-b border-gray-600">
+                  <th className="p-3 text-left border-b border-gray-500 rounded-tr-2xl">
                     Amount
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(jsonData).map(([address, amount]) => (
-                  <tr key={address} className="border-b border-gray-600">
-                    <td className="p-3 flex items-center">
-                      {/* Blockies Icon with rounded-full class */}
-                      <Blockies
-                        seed={address.toLowerCase()}
-                        size={10}
-                        scale={3}
-                        className="mr-2 rounded-full"
-                      />
-                      {address}
-                    </td>
-                    <td className="p-3">{formatEther(BigInt(amount))} BTT</td>
-                  </tr>
-                ))}
+                {Object.entries(jsonData).map(
+                  ([address, amount], index, array) => (
+                    <tr
+                      key={address}
+                      className={`border-b border-gray-600 ${
+                        index === array.length - 1 ? "rounded-b-2xl" : ""
+                      }`}
+                    >
+                      <td className="p-3 flex items-center">
+                        <Blockies
+                          seed={address.toLowerCase()}
+                          size={10}
+                          scale={3}
+                          className="mr-2 rounded-full"
+                        />
+                        {address}
+                      </td>
+                      <td className="p-3">{formatEther(BigInt(amount))} BTT</td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>
@@ -339,7 +356,7 @@ const UploadJson: React.FC = () => {
             type="text"
             value={tokenAddress}
             onChange={(e) => setTokenAddress(e.target.value)}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
+            className="w-full p-3 bg-gray-700 border border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter token address"
           />
         </div>
@@ -351,7 +368,7 @@ const UploadJson: React.FC = () => {
             type="text"
             value={airDropAlias}
             onChange={(e) => setDropAlias(e.target.value)}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
+            className="w-full p-3 bg-gray-700 border border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g: Funding.."
           />
         </div>
@@ -359,7 +376,7 @@ const UploadJson: React.FC = () => {
         <button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-md transition duration-300 ease-in-out"
+          className="w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-2xl transition duration-300 ease-in-out text-lg font-semibold"
         >
           {isLoading ? (
             <div className="flex items-center justify-center w-full">
@@ -371,7 +388,7 @@ const UploadJson: React.FC = () => {
         </button>
 
         {merkleRoot && (
-          <div className="mt-6 p-4 bg-gray-700 border border-gray-600 rounded-lg shadow-md">
+          <div className="mt-6 p-4 bg-gray-700 border border-gray-600 rounded-2xl shadow-md">
             <h3 className="text-lg font-semibold text-blue-300 mb-2">
               Verification Details
             </h3>
@@ -380,14 +397,14 @@ const UploadJson: React.FC = () => {
                 <span className="font-medium mr-2 text-blue-200">
                   Merkle Root:
                 </span>
-                <span className="font-mono bg-gray-600 px-3 py-2 rounded break-all mt-1 inline-block">
+                <span className="font-mono bg-gray-600 px-3 py-2 rounded-xl break-all mt-1 inline-block">
                   {merkleRoot}
                 </span>
               </div>
               {salt && (
                 <div className="text-gray-200">
                   <span className="font-medium mr-2 text-blue-200">Salt:</span>
-                  <span className="font-mono bg-gray-600 px-3 py-2 rounded break-all mt-1 inline-block">
+                  <span className="font-mono bg-gray-600 px-3 py-2 rounded-xl break-all mt-1 inline-block">
                     {salt}
                   </span>
                 </div>
@@ -397,7 +414,7 @@ const UploadJson: React.FC = () => {
                   <span className="font-medium mr-2 text-blue-200">
                     Computed Address:
                   </span>
-                  <span className="font-mono bg-gray-600 px-3 py-2 rounded break-all mt-1 inline-block">
+                  <span className="font-mono bg-gray-600 px-3 py-2 rounded-xl break-all mt-1 inline-block">
                     {computedAddress}
                   </span>
                 </div>

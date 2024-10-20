@@ -51,7 +51,7 @@ const Page: React.FC = () => {
         );
         const data = await response.json();
         console.log("Data", data.enrichedCampaigns);
-        setCampaigns(data.enrichedCampaigns); // Set the fetched campaigns
+        setCampaigns(data?.enrichedCampaigns); // Set the fetched campaigns
       } catch (error) {
         console.error("Error fetching campaigns:", error);
       } finally {
@@ -160,7 +160,7 @@ const Page: React.FC = () => {
       <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {loadingCampaigns ? (
           renderSkeletons()
-        ) : campaigns.length > 0 ? (
+        ) : campaigns?.length > 0 ? (
           campaigns.map((campaign, index) => {
             return (
               <div
@@ -246,7 +246,18 @@ const Page: React.FC = () => {
             );
           })
         ) : (
-          <p className="text-gray-400 text-center">No campaigns found.</p>
+          <p className="text-gray-400 text-left">
+            No campaigns found. Looks like you haven't created any airdrop
+            campaigns yet!
+            <br />
+            <a
+              href="/create-campaign" // Adjust this link based on your routing
+              className="text-blue-500 font-semibold hover:underline cursor-pointer"
+            >
+              Go to the Create Campaign
+            </a>{" "}
+            to get started.
+          </p>
         )}
       </div>
     </div>

@@ -31,3 +31,33 @@ body {
     text-wrap: balance;
   }
 }
+
+@layer utilities {
+  .josefin-large-title {
+    @apply text-5xl font-light tracking-tight;
+  }
+  .josefin-title-1 {
+    @apply text-4xl font-light;
+  }
+  .josefin-title-2 {
+    @apply text-3xl font-light;
+  }
+  .josefin-title-3 {
+    @apply text-2xl font-normal;
+  }
+  .josefin-headline {
+    @apply text-xl font-semibold;
+  }
+  .josefin-body {
+    @apply text-base font-normal;
+  }
+  .josefin-callout {
+    @apply text-sm font-semibold;
+  }
+  .josefin-subhead {
+    @apply text-sm font-medium;
+  }
+  .josefin-footnote {
+    @apply text-xs font-normal;
+  }
+}

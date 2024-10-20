@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+
 import Navbar from "../components/Navbar/Navbar";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
 
 import { Providers } from "../app/Providers";
 
-const inter = Inter({ subsets: ["latin"] });
+import { Josefin_Sans } from "next/font/google";
+
+const josefinSans = Josefin_Sans({
+  subsets: ["latin"],
+  variable: "--font-josefin-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "DropZone🤑",
@@ -20,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${josefinSans.variable} font-sans`}>
         <Providers>
           <Navbar />
           {children}

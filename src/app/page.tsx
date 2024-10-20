@@ -7,6 +7,7 @@ import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/Loader";
+import SkeletonLoader from "@/components/Skeleton/Skeleton"; // Import the SkeletonLoader
 
 const client = initializeClient();
 
@@ -59,7 +60,6 @@ function Page() {
 
     setLoading(index.toString());
     try {
-      // Call the generate-proof API with the correct JSON payload
       const proofResponse = await fetch("/api/generate-proof", {
         method: "POST",
         headers: {
@@ -78,16 +78,13 @@ function Page() {
       }
 
       const { proof } = await proofResponse.json();
-
-      // Ensure that the proof is an array
       const merkleProof = proof || [];
 
       if (merkleProof.length === 0) {
-        toast.error("error generating merkle proof");
+        toast.error("Error generating merkle proof");
         throw new Error("Invalid Merkle proof");
       }
 
-      // Call the claimTokens function from the contract
       const claimTx = await writeContractAsync({
         address: contractAddress as `0x${string}`,
         account: address as `0x${string}`,
@@ -98,7 +95,6 @@ function Page() {
 
       console.log(claimTx);
 
-      // Wait for the transaction to be confirmed
       const claimReceipt = await client?.waitForTransactionReceipt({
         hash: claimTx,
       });
@@ -115,8 +111,8 @@ function Page() {
       });
 
       if (!claimTrue.ok) {
-        toast.error("Failed to generate proof");
-        throw new Error("Failed to generate proof");
+        toast.error("Failed to claim");
+        throw new Error("Failed to claim");
       }
 
       console.log("Claim successful:", claimReceipt);
@@ -139,7 +135,7 @@ function Page() {
         </h1>
         {isLoading && (
           <div className="flex justify-center mb-4">
-            <h1> fetching your drops, hold tight...</h1>
+            <p>Fetching your drops, hold tight...</p>
           </div>
         )}
 
@@ -160,7 +156,12 @@ function Page() {
               </tr>
             </thead>
             <tbody>
-              {claimData.length > 0 ? (
+              {isLoading ? (
+                // Show skeleton loaders while data is loading
+                Array.from({ length: 3 }).map((_, index) => (
+                  <SkeletonLoader key={index} />
+                ))
+              ) : claimData.length > 0 ? (
                 claimData.map((item, index) => (
                   <tr key={index} className="border-b border-gray-600">
                     <td className="p-3 flex items-center">
@@ -180,16 +181,16 @@ function Page() {
                         onClick={() =>
                           handleClaim(
                             item.deployedContract,
-                            item.merkleRoot, // Assuming you have the merkleRoot in the claimData
-                            item.participant[0]?.amount, // Assuming amount is in participant array
-                            index // Pass index to identify the loading button
+                            item.merkleRoot,
+                            item.participant[0]?.amount,
+                            index
                           )
                         }
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex justify-center items-center"
-                        disabled={loading === index.toString()} // Disable button while loading
+                        disabled={loading === index.toString()}
                       >
                         {loading === index.toString() ? (
-                          <Loader size={20} className="mr-2" /> // Use the Loader component
+                          <Loader size={20} className="mr-2" />
                         ) : (
                           "Claim"
                         )}
