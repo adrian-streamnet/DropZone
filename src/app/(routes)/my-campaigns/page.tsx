@@ -247,11 +247,11 @@ const Page: React.FC = () => {
           })
         ) : (
           <p className="text-gray-400 text-left">
-            No campaigns found. Looks like you haven't created any airdrop
+            No campaigns found. Looks like you haven&apos;t created any airdrop
             campaigns yet!
             <br />
             <a
-              href="/create-campaign" // Adjust this link based on your routing
+              href="/create-campaign"
               className="text-blue-500 font-semibold hover:underline cursor-pointer"
             >
               Go to the Create Campaign

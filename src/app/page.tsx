@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Blockies from "react-blockies";
-import { CONTRACT_ADDRESS } from "@/app/constants";
-import contractABI from "@/artifacts/DropZone.json";
-import { initializeClient } from "@/app/utils/publicClient";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useWriteContract, useContractRead } from "wagmi";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/Loader";
 import SkeletonLoader from "@/components/Skeleton/Skeleton"; // Import the SkeletonLoader
+import contractABI from "@/artifacts/DropZone.json";
+import ERC20ABI from "@/artifacts/ERC20.json"; // Add ERC20 ABI
+import { initializeClient } from "@/app/utils/publicClient";
+import { Abi, Address } from "viem"; // Import relevant types from Viem or ethers.js based on the client you're using
 
 const client = initializeClient();
 
@@ -19,19 +20,52 @@ function Page() {
   const [claimedItems, setClaimedItems] = useState<string[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [tokenSymbols, setTokenSymbols] = useState<Record<string, string>>({});
+
+  // Function to fetch the symbol for each token
+  const fetchTokenSymbol = async (
+    underlyingToken: Address
+  ): Promise<string | null> => {
+    try {
+      const symbol = await client?.readContract({
+        address: underlyingToken,
+        abi: ERC20ABI.abi as Abi, // Ensure correct ABI typing
+        functionName: "symbol",
+      });
+
+      if (typeof symbol === "string") {
+        return symbol;
+      } else {
+        throw new Error("Unexpected symbol type");
+      }
+    } catch (error) {
+      console.error("Error fetching token symbol:", error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const fetchClaimableData = async () => {
       try {
         setIsLoading(true);
-
         if (!address) return;
+
         const response = await fetch(
           `/api/get-claimable-data?participant=${address}`
         );
         const data = await response.json();
-        console.log(data);
         setClaimData(data);
+
+        // Fetch symbols for each underlyingToken and update the state
+        const symbols = await Promise.all(
+          data.map(async (item: any) => {
+            const symbol = await fetchTokenSymbol(item.underlyingToken);
+            return { [item.underlyingToken]: symbol || "N/A" };
+          })
+        );
+
+        // Merge symbols into an object for quick lookup
+        setTokenSymbols(Object.assign({}, ...symbols));
       } catch (error) {
         console.error("Error fetching claimable data:", error);
         setError("Error fetching claimable data");
@@ -49,10 +83,7 @@ function Page() {
     amount: string,
     index: number
   ) => {
-    console.log(contractAddress);
-    console.log(merkleRoot);
-    console.log(amount);
-    if (!client || !address) {
+    if (!address) {
       toast.error("Please connect your wallet");
       setError("Client or address is not initialized");
       return;
@@ -174,7 +205,8 @@ function Page() {
                       {item.airDropAlias ? item.airDropAlias : "Drop Zone"}
                     </td>
                     <td className="p-3">
-                      {Number(item.participant[0]?.amount) / 1e18} BTT
+                      {Number(item.participant[0]?.amount) / 1e18}{" "}
+                      {tokenSymbols[item.underlyingToken] || "Token"}
                     </td>
                     <td className="p-3">
                       <button

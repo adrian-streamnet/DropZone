@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import Blockies from "react-blockies";
 import { CONTRACT_ADDRESS } from "@/app/constants";
@@ -10,8 +10,8 @@ import { useAccount, useWriteContract } from "wagmi";
 import { Address, formatEther, getContract, keccak256 } from "viem";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/Loader";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDownload } from "@fortawesome/free-solid-svg-icons";
+import { Abi } from "viem"; // Import Abi type from Viem
+import ERC20ABI from "@/artifacts/ERC20.json";
 
 const client = initializeClient();
 
@@ -23,14 +23,49 @@ type HexString = `0x${string}`;
 const UploadJson: React.FC = () => {
   const [jsonData, setJsonData] = useState<JsonData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [totalTokens, setTotalTokens] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merkleRoot, setMerkleRoot] = useState<string | null>(null);
   const [computedAddress, setComputedAddress] = useState<string | null>(null);
   const [tokenAddress, setTokenAddress] = useState<string>(""); // State for token address
   const [airDropAlias, setDropAlias] = useState<string>(""); // State for token address
   const [salt, setSalt] = useState<string | null>(null); // State for salt
+
   const { writeContractAsync } = useWriteContract();
   const { address, isConnected } = useAccount();
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null); // Update useState to allow 'null'
+
+  const fetchTokenSymbol = async (
+    tokenAddress: Address
+  ): Promise<string | null> => {
+    try {
+      const symbol = await client?.readContract({
+        address: tokenAddress,
+        abi: ERC20ABI.abi as Abi, // Ensure correct ABI typing
+        functionName: "symbol",
+      });
+
+      if (typeof symbol === "string") {
+        return symbol;
+      } else {
+        throw new Error("Unexpected symbol type");
+      }
+    } catch (error) {
+      console.error("Error fetching token symbol:", error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const getSymbol = async () => {
+      if (tokenAddress) {
+        const symbol = await fetchTokenSymbol(tokenAddress as Address);
+        setTokenSymbol(symbol);
+      }
+    };
+
+    getSymbol();
+  }, [tokenAddress]);
 
   // Handle dropped files
   const onDrop = (acceptedFiles: File[]) => {
@@ -51,6 +86,12 @@ const UploadJson: React.FC = () => {
               )
             ) {
               setJsonData(data);
+              const total = Object.values(data).reduce((acc, amount) => {
+                // Convert amount to BigInt before summing
+                return acc + BigInt(amount);
+              }, BigInt(0));
+
+              setTotalTokens(total);
               setError(null);
             } else {
               setError(
@@ -234,15 +275,14 @@ const UploadJson: React.FC = () => {
           Upload JSON File
         </h1>
 
-        <p className="mb-2 ios-headline">
-          Upload your JSON file containing participant addresses and token
-          amounts.
+        <p className="mb-2">
+          Upload your JSON file containing participant addresses and their
+          respective token amounts.
         </p>
-        <p className="mb-4 ios-headline">
-          If you're unsure, click the button below to download a sample JSON
-          structure to edit.
+        <p className="mb-4">
+          If you&apos;re unsure about the format, click the button below to
+          download a sample JSON structure that you can edit.
         </p>
-
         <div className="mb-4">
           <button
             onClick={downloadJSON}
@@ -338,10 +378,18 @@ const UploadJson: React.FC = () => {
                         />
                         {address}
                       </td>
-                      <td className="p-3">{formatEther(BigInt(amount))} BTT</td>
+                      <td className="p-3">
+                        {formatEther(BigInt(amount))} {tokenSymbol || "Token"}
+                      </td>
                     </tr>
                   )
                 )}
+                <tr className="bg-gray-600 font-bold">
+                  <td className=" px-4 py-2">Total Tokens</td>
+                  <td className=" px-4 py-2">
+                    {formatEther(BigInt(totalTokens))} {tokenSymbol} {""}Tokens
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>

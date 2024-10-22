@@ -40,6 +40,7 @@ export async function GET(req: Request) {
           deployedContract: campaign.deployedContract,
           merkleRoot: campaign.merkleRoot,
           airDropAlias: campaign.campaignAlias,
+          underlyingToken: campaign.underlyingToken,
           participant: unclaimedParticipants, // Only unclaimed participants
         };
       })
