@@ -15,7 +15,7 @@ const josefinSans = Josefin_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "DropZone🤑",
+  title: "DropZone🪂",
   description: "Airdrop On The Way",
 };
 

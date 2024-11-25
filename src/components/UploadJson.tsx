@@ -1,19 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import Blockies from "react-blockies";
-import { CONTRACT_ADDRESS } from "@/app/constants";
+import { getContractAddress } from "@/app/constants";
 import contractABI from "@/artifacts/DropZoneFactory.json";
 import { initializeClient } from "@/app/utils/publicClient";
 import { useAccount, useWriteContract } from "wagmi";
-import { Address, formatEther, getContract, keccak256 } from "viem";
+import {
+  Address,
+  formatEther,
+  getContract,
+  keccak256,
+  PublicClient,
+} from "viem";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/Loader";
 import { Abi } from "viem"; // Import Abi type from Viem
 import ERC20ABI from "@/artifacts/ERC20.json";
-
-const client = initializeClient();
+import { getChainId } from "@wagmi/core";
+import { config } from "@/app/utils/config";
 
 interface JsonData {
   [address: string]: string;
@@ -30,16 +36,20 @@ const UploadJson: React.FC = () => {
   const [tokenAddress, setTokenAddress] = useState<string>(""); // State for token address
   const [airDropAlias, setDropAlias] = useState<string>(""); // State for token address
   const [salt, setSalt] = useState<string | null>(null); // State for salt
+  const [chainId, setChainId] = useState<number>(0);
+  const clientRef = useRef<PublicClient | null>(null);
 
   const { writeContractAsync } = useWriteContract();
   const { address, isConnected } = useAccount();
-  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null); // Update useState to allow 'null'
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null); // Allow 'null'
 
-  const fetchTokenSymbol = async (
-    tokenAddress: Address
-  ): Promise<string | null> => {
+  const fetchTokenSymbol = async (tokenAddress: Address) => {
     try {
-      const symbol = await client?.readContract({
+      if (!clientRef.current) {
+        alert("Client not initialized. Please try again.");
+        return;
+      }
+      const symbol = await clientRef.current.readContract({
         address: tokenAddress,
         abi: ERC20ABI.abi as Abi, // Ensure correct ABI typing
         functionName: "symbol",
@@ -60,11 +70,23 @@ const UploadJson: React.FC = () => {
     const getSymbol = async () => {
       if (tokenAddress) {
         const symbol = await fetchTokenSymbol(tokenAddress as Address);
-        setTokenSymbol(symbol);
+        setTokenSymbol(symbol ?? null); // Ensure undefined is converted to null
       }
     };
 
     getSymbol();
+    const setupClient = async () => {
+      try {
+        const currentChainId = getChainId(config);
+        setChainId(currentChainId);
+        const newClient = initializeClient(currentChainId);
+        clientRef.current = newClient as PublicClient;
+      } catch (error) {
+        console.error("Error initializing client:", error);
+      }
+    };
+
+    setupClient();
   }, [tokenAddress]);
 
   // Handle dropped files
@@ -110,7 +132,7 @@ const UploadJson: React.FC = () => {
   };
 
   const submitInContract = async (tokenAddress: string, merkleRoot: string) => {
-    if (!client) {
+    if (!clientRef.current) {
       setError("Client is not initialized");
       toast.error("Client is not initialized."); // Error notification
       return;
@@ -128,9 +150,9 @@ const UploadJson: React.FC = () => {
       toast.success("Salt generated successfully!");
 
       const contract = getContract({
-        address: CONTRACT_ADDRESS,
+        address: getContractAddress(chainId) as Address,
         abi: contractABI,
-        client: client,
+        client: clientRef.current,
       });
 
       const computedAddress = await contract.read.computeAddress([
@@ -146,14 +168,16 @@ const UploadJson: React.FC = () => {
 
       // Deploy the DropZone contract with the required parameters
       const tx = await writeContractAsync({
-        address: CONTRACT_ADDRESS,
+        address: getContractAddress(chainId) as Address,
         account: address,
         abi: contractABI,
         functionName: "deployDropZone",
         args: [tokenAddress, address, merkleRoot, "testHash", generatedSalt],
       });
 
-      const receipt = await client.waitForTransactionReceipt({ hash: tx });
+      const receipt = await clientRef.current.waitForTransactionReceipt({
+        hash: tx,
+      });
       toast.success("Transaction confirmed!"); // Success notification
 
       return computedAddress;

@@ -18,9 +18,28 @@ const bittorrentchainTestnet = {
   testnet: true,
 };
 
-export const initializeClient = () => {
-  const client = getPublicClient(config, {
-    chainId: bittorrentchainTestnet.id,
-  });
+const bittorrentchain = {
+  id: 199,
+  name: "BitTorrent Chain Mainnet",
+  nativeCurrency: {
+    decimals: 18,
+    name: "BitTorrent Chain Mainnet",
+    symbol: "BTT",
+  },
+  rpcUrls: {
+    default: { http: ["https://rpc.bt.io"] },
+  },
+  blockExplorers: {
+    default: { name: "bttc scan", url: "https://bttcscan.com/" },
+  },
+  testnet: true,
+};
+
+type AllowedChainIds =
+  | typeof bittorrentchain.id
+  | typeof bittorrentchainTestnet.id;
+
+export const initializeClient = (chainId: AllowedChainIds) => {
+  const client = getPublicClient(config, { chainId });
   return client;
 };

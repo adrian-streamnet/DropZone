@@ -16,10 +16,27 @@ const bittorrentchainTestnet = {
   },
   testnet: true,
 };
+const bittorrentchain = {
+  id: 199,
+  name: "BitTorrent Chain Mainnet",
+  nativeCurrency: {
+    decimals: 18,
+    name: "BitTorrent Chain Mainnet",
+    symbol: "BTT",
+  },
+  rpcUrls: {
+    default: { http: ["https://rpc.bt.io"] },
+  },
+  blockExplorers: {
+    default: { name: "bttc scan", url: "https://bttcscan.com/" },
+  },
+  testnet: true,
+};
 
 export const config = createConfig({
-  chains: [bittorrentchainTestnet],
+  chains: [bittorrentchainTestnet, bittorrentchain],
   transports: {
+    [bittorrentchain.id]: http(),
     [bittorrentchainTestnet.id]: http(),
   },
 });

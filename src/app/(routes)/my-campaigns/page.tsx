@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAccount, useWriteContract } from "wagmi";
 import contractABI from "@/artifacts/DropZone.json";
 import ERC20ABI from "@/artifacts/ERC20.json";
-import { Address, getContract } from "viem";
+import { Address, getContract, PublicClient } from "viem";
 import { initializeClient } from "@/app/utils/publicClient";
 import toast, { Toaster } from "react-hot-toast";
 import Loader from "@/components/Loader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { getChainId } from "@wagmi/core";
+import { config } from "@/app/utils/config";
+
 import {
   faUser,
   faKey,
@@ -16,8 +19,6 @@ import {
   faFileContract,
   faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
-
-const client = initializeClient();
 
 // Define the campaign type for better TypeScript support
 interface Campaign {
@@ -40,6 +41,8 @@ const Page: React.FC = () => {
   const [loadingAirdropIndex, setLoadingAirdropIndex] = useState<number | null>(
     null
   ); // Track which campaign is currently loading
+  const [chainId, setChainId] = useState<number>(0);
+  const clientRef = useRef<PublicClient | null>(null);
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -62,6 +65,18 @@ const Page: React.FC = () => {
     if (isConnected) {
       fetchCampaigns();
     }
+    const setupClient = async () => {
+      try {
+        const currentChainId = getChainId(config);
+        setChainId(currentChainId);
+        const newClient = initializeClient(currentChainId);
+        clientRef.current = newClient as PublicClient;
+      } catch (error) {
+        console.error("Error initializing client:", error);
+      }
+    };
+
+    setupClient();
   }, [address, isConnected]);
 
   const fundAirdrop = async (
@@ -72,13 +87,13 @@ const Page: React.FC = () => {
   ) => {
     console.log(deployedContract, underlyingToken);
     try {
-      if (!client) {
+      if (!clientRef.current) {
         return;
       }
       const contract = getContract({
         address: underlyingToken,
         abi: ERC20ABI.abi,
-        client: client,
+        client: clientRef.current,
       });
 
       // Get the computed address from the contract
@@ -107,9 +122,10 @@ const Page: React.FC = () => {
           args: [deployedContract, BigInt(totalAmount)],
         });
         console.log(approveTx);
-        const approveReceipt = await client?.waitForTransactionReceipt({
-          hash: approveTx,
-        });
+        const approveReceipt =
+          await clientRef.current?.waitForTransactionReceipt({
+            hash: approveTx,
+          });
         console.log("approved:", approveReceipt);
       }
 
@@ -120,7 +136,7 @@ const Page: React.FC = () => {
         functionName: "fundAirdrop",
         args: [BigInt(totalAmount), address],
       });
-      const fundReceipt = await client?.waitForTransactionReceipt({
+      const fundReceipt = await clientRef.current?.waitForTransactionReceipt({
         hash: fundTx,
       });
       console.log("funded:", fundReceipt);
