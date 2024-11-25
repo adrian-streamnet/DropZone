@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Blockies from "react-blockies";
 import { useAccount, useWriteContract, useContractRead } from "wagmi";
 import toast, { Toaster } from "react-hot-toast";
@@ -8,9 +8,9 @@ import SkeletonLoader from "@/components/Skeleton/Skeleton"; // Import the Skele
 import contractABI from "@/artifacts/DropZone.json";
 import ERC20ABI from "@/artifacts/ERC20.json"; // Add ERC20 ABI
 import { initializeClient } from "@/app/utils/publicClient";
-import { Abi, Address } from "viem"; // Import relevant types from Viem or ethers.js based on the client you're using
-
-const client = initializeClient();
+import { Abi, Address, PublicClient } from "viem";
+import { getChainId } from "@wagmi/core";
+import { config } from "@/app/utils/config";
 
 function Page() {
   const { writeContractAsync } = useWriteContract();
@@ -21,13 +21,15 @@ function Page() {
   const [loading, setLoading] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [tokenSymbols, setTokenSymbols] = useState<Record<string, string>>({});
+  const [chainId, setChainId] = useState<number>(0);
+  const clientRef = useRef<PublicClient | null>(null);
 
   // Function to fetch the symbol for each token
   const fetchTokenSymbol = async (
     underlyingToken: Address
   ): Promise<string | null> => {
     try {
-      const symbol = await client?.readContract({
+      const symbol = await clientRef.current?.readContract({
         address: underlyingToken,
         abi: ERC20ABI.abi as Abi, // Ensure correct ABI typing
         functionName: "symbol",
@@ -51,7 +53,7 @@ function Page() {
         if (!address) return;
 
         const response = await fetch(
-          `/api/get-claimable-data?participant=${address}`
+          `/api/get-claimable-data?participant=${address}&chainId=${chainId}`
         );
         const data = await response.json();
         setClaimData(data);
@@ -66,6 +68,18 @@ function Page() {
 
         // Merge symbols into an object for quick lookup
         setTokenSymbols(Object.assign({}, ...symbols));
+        const setupClient = async () => {
+          try {
+            const currentChainId = getChainId(config);
+            setChainId(currentChainId);
+            const newClient = initializeClient(currentChainId);
+            clientRef.current = newClient as PublicClient;
+          } catch (error) {
+            console.error("Error initializing client:", error);
+          }
+        };
+
+        setupClient();
       } catch (error) {
         console.error("Error fetching claimable data:", error);
         setError("Error fetching claimable data");
@@ -75,7 +89,7 @@ function Page() {
     };
 
     fetchClaimableData();
-  }, [address]);
+  }, [address, chainId]);
 
   const handleClaim = async (
     contractAddress: string,
@@ -126,7 +140,7 @@ function Page() {
 
       console.log(claimTx);
 
-      const claimReceipt = await client?.waitForTransactionReceipt({
+      const claimReceipt = await clientRef.current?.waitForTransactionReceipt({
         hash: claimTx,
       });
 

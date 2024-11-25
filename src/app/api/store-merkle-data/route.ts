@@ -10,11 +10,12 @@ export async function POST(req: Request) {
     // Parse the JSON body
     const body = await req.json();
 
-    const { owner, merkleRoot, deployedContract, campaignAlias, underlyingToken, participants } = body;
+    const { owner, chainId, merkleRoot, deployedContract, campaignAlias, underlyingToken, participants } = body;
 
     // Validate required fields
     if (
       !owner||
+      !chainId ||
       !merkleRoot ||
       !deployedContract ||
       !campaignAlias ||
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
     // Create a new campaign record
     const newCampaign = new MerkleData({
       owner,
+      chainId,
       merkleRoot,
       deployedContract,
       campaignAlias,

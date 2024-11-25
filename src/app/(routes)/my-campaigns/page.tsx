@@ -24,6 +24,7 @@ import {
 interface Campaign {
   _id: string;
   owner: string;
+  chainId: number;
   merkleRoot: string;
   campaignAlias: string;
   underlyingToken: string;
@@ -50,7 +51,7 @@ const Page: React.FC = () => {
       setLoadingCampaigns(true); // Set loading to true before fetching
       try {
         const response = await fetch(
-          `/api/get-campaigns/?ownerAddress=${address}`
+          `/api/get-campaigns/?ownerAddress=${address}&chainId=${chainId}`
         );
         const data = await response.json();
         console.log("Data", data.enrichedCampaigns);
@@ -77,7 +78,7 @@ const Page: React.FC = () => {
     };
 
     setupClient();
-  }, [address, isConnected]);
+  }, [address, isConnected, chainId]);
 
   const fundAirdrop = async (
     deployedContract: Address,

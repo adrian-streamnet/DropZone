@@ -10,6 +10,7 @@ export async function GET(req: Request) {
     // Extract query parameters from the request URL
     const { searchParams } = new URL(req.url);
     const ownerAddress = searchParams.get('ownerAddress');
+    const chainId = searchParams.get('chainId');
 
     // Validate ownerAddress
     if (!ownerAddress) {
@@ -19,21 +20,41 @@ export async function GET(req: Request) {
       );
     }
 
-    // Find campaigns by ownerAddress
-    const campaigns = await MerkleData.find({ owner: ownerAddress }).lean();
+    // Validate chainId (optional but recommended)
+    if (!chainId) {
+      return NextResponse.json(
+        { error: "Chain ID is required" },
+        { status: 400 }
+      );
+    }
+    if (isNaN(Number(chainId))) {
+      return NextResponse.json(
+        { error: "Invalid Chain ID" },
+        { status: 400 }
+      );
+    }
+
+    // Find campaigns by ownerAddress and chainId
+    const campaigns = await MerkleData.find({
+      owner: ownerAddress,
+      chainId: Number(chainId), // Ensure chainId is stored as a number in the database
+    }).lean();
 
     // Check if any campaigns were found
-    if (campaigns.length == 0) {
+    if (campaigns.length === 0) {
       return NextResponse.json(
-        { message: "No campaigns found for this owner" },
+        { message: "No campaigns found for this owner and chain ID" },
         { status: 404 }
       );
     }
 
     const enrichedCampaigns = campaigns.map((campaign) => {
-      const totalAmount = campaign.participants.reduce((sum: any, participant:any) => {
-        return sum + BigInt(participant.amount); // Use BigInt to sum large amounts
-      }, BigInt(0)); // Start with BigInt(0)
+      const totalAmount = campaign.participants.reduce(
+        (sum: bigint, participant: any) => {
+          return sum + BigInt(participant.amount); // Use BigInt to sum large amounts
+        },
+        BigInt(0) // Start with BigInt(0)
+      );
 
       return {
         ...campaign, // Spread campaign fields

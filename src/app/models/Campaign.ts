@@ -8,6 +8,7 @@ const ParticipantSchema = new mongoose.Schema({
 
 const CampaignSchemaForMerkle = new mongoose.Schema({
   owner: { type: String, required: true },
+  chainId: { type: Number, required: true },
   merkleRoot: { type: String, required: true },
   deployedContract: { type: String, required: true },
   campaignAlias: { type: String, required: true },

@@ -8,9 +8,10 @@ export async function GET(req: Request) {
     // Connect to MongoDB
     await dbConnect();
 
-    // Extract the participant address from the query parameters
+    // Extract query parameters
     const { searchParams } = new URL(req.url);
     const participantAddress = searchParams.get("participant");
+    const chainId = searchParams.get("chainId");
 
     if (!participantAddress) {
       return NextResponse.json(
@@ -19,9 +20,17 @@ export async function GET(req: Request) {
       );
     }
 
-    // Query the database for participants with the provided address
+    if (!chainId) {
+      return NextResponse.json(
+        { error: "Chain ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Query the database for campaigns with the provided participant address and chainId
     const campaignData = await MerkleData.find({
       "participants.participant": participantAddress,
+      chainId: parseInt(chainId), // Ensure chainId matches as a number
     });
 
     // Filter relevant data for the response
@@ -41,6 +50,7 @@ export async function GET(req: Request) {
           merkleRoot: campaign.merkleRoot,
           airDropAlias: campaign.campaignAlias,
           underlyingToken: campaign.underlyingToken,
+          chainId: campaign.chainId, // Include chainId for clarity
           participant: unclaimedParticipants, // Only unclaimed participants
         };
       })

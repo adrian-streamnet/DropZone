@@ -240,6 +240,7 @@ const UploadJson: React.FC = () => {
           },
           body: JSON.stringify({
             owner: address,
+            chainId: chainId,
             merkleRoot: merkleRootValue,
             deployedContract: computedAddress,
             campaignAlias: airDropAlias,
